@@ -259,9 +259,10 @@ except twitter.api.TwitterHTTPError, e:
     # authentication failure
     if (code in [32, 89]):
         clear_auth_and_restart()
-    # rate limit exceeded
+    # page not found
     if code == 34:
         set_status_and_exit('not-there', 'error', 'User not on Twitter')
+    # rate limit exceeded
     if code == 88:
         # provided we got at least one page, rate limit isn't an error but expected
         if pages_got == 0:
