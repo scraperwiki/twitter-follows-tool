@@ -67,11 +67,6 @@ def do_tool_oauth():
     tw = twitter.Twitter(auth=twitter.OAuth( oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
     return tw
 
-# XXX We're going to need to check for exceptions like this and delete the auth files and reauth
-# You can get these exceptions either just above, or in the dance too - basically in the whole file...
-#twitter.api.TwitterHTTPError: Twitter sent status 401 for URL: 1.1/followers/list.json using parameters: (oauth_consumer_key=3CejKAAW7OGqni9lxuU09g&oauth_nonce=14791547903118891158&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1360055733&oauth_token=PFcsB0z7nf7kNDVq030T6VZSK1PwTMLjuLxLi6U7PU&oauth_version=1.0&screen_name=spikingneural&oauth_signature=szYU8AYsfSp3m5Kzo%2FYGnKHZyP8%3D)
-#details: {"errors":[{"message":"Invalid or expired token","code":89}]}
-
 #########################################################################
 # Helper functions
 
