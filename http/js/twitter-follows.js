@@ -62,7 +62,7 @@ var scrape_action = function() {
     }
 
     // Pass various OAuth bits of data to the Python script that is going to do the work
-    scraperwiki.exec('echo ' + escapeshell(q) + '>user.txt; tool/get.py "' + callback_url + '" "' + oauth_verifier + '"', 
+    scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; tool/get.py "' + callback_url + '" "' + oauth_verifier + '"', 
         done_exec_main, 
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception)
@@ -175,10 +175,6 @@ var show_hide_stuff = function(done) {
        something_went_wrong(err + "! " + exception)
     })
 }
-
-var escapeshell = function(cmd) {
-    return "'"+cmd.replace(/'/g,"'\\''")+"'";
-};
 
 // Get OAuth parameters that we need from the URL
 var settings = scraperwiki.readSettings()

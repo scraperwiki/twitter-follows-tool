@@ -44,7 +44,7 @@ def oauth_url_dance(consumer_key, consumer_secret, callback_url, oauth_verifier,
         return oauth_url
 
     # 2) We've done pre-verification, hopefully the user has authed us in Twitter
-    # and we've been redirected to. Check we are and ask for the permenanet tokens.
+    # and we've been redirected to. Check we are and ask for the permanent tokens.
     oauth_token, oauth_token_secret = read_token_file(CREDS_PRE_VERIFIY)
     twitter = Twitter(auth=OAuth( oauth_token, oauth_token_secret, consumer_key, consumer_secret), format='', api_version=None)
     oauth_token, oauth_token_secret = parse_oauth_tokens(twitter.oauth.access_token(oauth_verifier=oauth_verifier))
@@ -66,11 +66,6 @@ def do_tool_oauth():
     oauth_token, oauth_token_secret = read_token_file(CREDS_VERIFIED)
     tw = twitter.Twitter(auth=twitter.OAuth( oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
     return tw
-
-# XXX We're going to need to check for exceptions like this and delete the auth files and reauth
-# You can get these exceptions either just above, or in the dance too - basically in the whole file...
-#twitter.api.TwitterHTTPError: Twitter sent status 401 for URL: 1.1/followers/list.json using parameters: (oauth_consumer_key=3CejKAAW7OGqni9lxuU09g&oauth_nonce=14791547903118891158&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1360055733&oauth_token=PFcsB0z7nf7kNDVq030T6VZSK1PwTMLjuLxLi6U7PU&oauth_version=1.0&screen_name=spikingneural&oauth_signature=szYU8AYsfSp3m5Kzo%2FYGnKHZyP8%3D)
-#details: {"errors":[{"message":"Invalid or expired token","code":89}]}
 
 #########################################################################
 # Helper functions
@@ -259,9 +254,10 @@ except twitter.api.TwitterHTTPError, e:
     # authentication failure
     if (code in [32, 89]):
         clear_auth_and_restart()
-    # rate limit exceeded
+    # page not found
     if code == 34:
         set_status_and_exit('not-there', 'error', 'User not on Twitter')
+    # rate limit exceeded
     if code == 88:
         # provided we got at least one page, rate limit isn't an error but expected
         if pages_got == 0:
