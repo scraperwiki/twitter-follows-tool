@@ -268,7 +268,7 @@ except twitter.api.TwitterHTTPError, e:
 except httplib.IncompleteRead, e:
     # I think this is effectively a rate limit error - so only count if it was first error
     if pages_got == 0:
-        set_status_and_exit('rate-limit', 'error', 'Twitter broke the conncetion')
+        set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
 
 # Save progress message
 if batch_got == batch_expected:
