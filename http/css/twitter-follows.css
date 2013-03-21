@@ -17,3 +17,7 @@ p.lead strong {
   padding: 3px 6px;
 }
 
+#settings-clear button {
+  margin: 40px 0 5px 0;
+}
+
