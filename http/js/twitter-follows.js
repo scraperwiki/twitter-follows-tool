@@ -88,7 +88,7 @@ var clear_action = function() {
 var fix_button_texts = function() {
     $('#reauthenticate').removeClass('loading').html('Reauthenticate').attr('disabled', false)
     $('#submit').removeClass('loading').html('Go!').attr('disabled', false)
-    $('#clear-data').removeClass('loading').html('Clear data').attr('disabled', false)
+    $('#clear-data').removeClass('loading').html('Monitor someone else*').attr('disabled', false)
 }
  
 // Show the right form (get settings, or the refresh data one)
@@ -102,6 +102,9 @@ var show_hide_stuff = function(done) {
         // Show right form
         scraperwiki.sql('select * from status where id = "followers"', function(results){
             results = results[0]
+
+            results['batch_expected'] += 1; // debugging, force a state
+
             console.log(results)
 
             $('.settings').hide()

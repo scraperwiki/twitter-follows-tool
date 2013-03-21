@@ -1,5 +1,6 @@
 body {
   padding: 20px;
+  text-align: center;
 }
 
 h2 {
@@ -8,5 +9,11 @@ h2 {
 
 .muted {
   margin-right: 10px;
+}
+
+p.lead strong {
+  font-weight: inherit;
+  background-color: #ff9; 
+  padding: 3px 6px;
 }
 
