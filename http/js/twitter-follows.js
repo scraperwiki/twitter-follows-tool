@@ -87,7 +87,6 @@ var clear_action = function() {
 // Buttons show "Loading..." and so on while working. This puts all their text back after.
 var fix_button_texts = function() {
     $('#reauthenticate').removeClass('loading').html('Reauthenticate').attr('disabled', false)
-    $('#refresh').removeClass('loading').html('Refresh!').attr('disabled', false)
     $('#submit').removeClass('loading').html('Go!').attr('disabled', false)
     $('#clear-data').removeClass('loading').html('Clear data').attr('disabled', false)
 }
@@ -188,7 +187,7 @@ scraperwiki.tool.getURL(function(our_url) {
     // go multiple times to Twitter 
     callback_url = url.attr('base') + url.attr('path')
     // only when we have the callback URL, allow the submit button to be clicked
-    $("#submit,#refresh,#reauthenticate,#clear-data").removeAttr("disabled")
+    $("#submit,#reauthenticate,#clear-data").removeAttr("disabled")
 })
 
 $(document).ready(function() {
@@ -201,5 +200,5 @@ $(document).ready(function() {
     })
 
     $('#clear-data').on('click', clear_action)
-    $('#submit,#reauthenticate,#refresh').on('click', scrape_action)
+    $('#submit,#reauthenticate').on('click', scrape_action)
 })
