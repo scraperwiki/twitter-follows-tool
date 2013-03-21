@@ -87,9 +87,8 @@ var clear_action = function() {
 // Buttons show "Loading..." and so on while working. This puts all their text back after.
 var fix_button_texts = function() {
     $('#reauthenticate').removeClass('loading').html('Reauthenticate').attr('disabled', false)
-    $('#refresh').removeClass('loading').html('Refresh!').attr('disabled', false)
-    $('#submit').removeClass('loading').html('Go!').attr('disabled', false)
-    $('#clear-data').removeClass('loading').html('Clear data').attr('disabled', false)
+    $('#submit').removeClass('loading').html('Go').attr('disabled', false)
+    $('#clear-data').removeClass('loading').html('Monitor someone else*').attr('disabled', false)
 }
  
 // Show the right form (get settings, or the refresh data one)
@@ -103,6 +102,9 @@ var show_hide_stuff = function(done) {
         // Show right form
         scraperwiki.sql('select * from status where id = "followers"', function(results){
             results = results[0]
+
+            // results['batch_expected'] += 1; // debugging, force a state
+
             console.log(results)
 
             $('.settings').hide()
@@ -166,6 +168,7 @@ var show_hide_stuff = function(done) {
         }, function(results) {
             // this is bad as it will masks real errors - we have to show the form as
             // no SQLite database gives an error
+            fix_button_texts()
             $('#settings-get').show()
             if (done) {
                 done()
@@ -188,7 +191,7 @@ scraperwiki.tool.getURL(function(our_url) {
     // go multiple times to Twitter 
     callback_url = url.attr('base') + url.attr('path')
     // only when we have the callback URL, allow the submit button to be clicked
-    $("#submit,#refresh,#reauthenticate,#clear-data").removeAttr("disabled")
+    $("#submit,#reauthenticate,#clear-data").removeAttr("disabled")
 })
 
 $(document).ready(function() {
@@ -201,5 +204,5 @@ $(document).ready(function() {
     })
 
     $('#clear-data').on('click', clear_action)
-    $('#submit,#reauthenticate,#refresh').on('click', scrape_action)
+    $('#submit,#reauthenticate').on('click', scrape_action)
 })

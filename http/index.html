@@ -18,47 +18,37 @@
   <body>
 
      <div class="settings" id="settings-auth" style="display:none">
-         <h2>Permission needed from Twitter</h2>
-         <p>To carry on getting data, please
+         <h1>Permission needed from Twitter</h1>
+         <p class="lead">To carry on getting data, please
          <button class="btn btn-primary" type="button" id="reauthenticate" disabled="disabled">Reauthenticate</button> with Twitter.
+         </p>
     </div>
 
      <div class="settings" id="settings-working" style="display:none">
-         <div id="got-some">
-             <h2>Getting @<span class="who">...</span>'s followers</h2>
-
-             <p>So far have got <span class="batch_got"></span>/<span class="batch_expected"></span>. 
-             It'll take about <span id="eta"></span>.
-             </p>
-         </div>
-         <div id="got-all">
-             <h2>Got @<span class="who">...</span>'s followers</h2>
-
-             <p>They have <span class="batch_got"></span> followers. New ones will be added automatically.</p>
-         </div>
-
-         <button class="btn btn-primary" type="button" id="refresh" disabled="disabled">Refresh!</button>
+         <h1>Monitoring @<span class="who">...</span>'s followers</h1>
+         <p class="lead">Got <strong><span class="batch_got"></span>/<span class="batch_expected"></span></strong> followers.  
+           <span id="got-some">
+             Will be up to date in about <strong><span id="eta"></span></strong>.
+           </span>
+           <span id="got-all">
+             Will check again in the <strong>next hour</strong>.
+           </span>
+         </p>
     </div>
 
     <div class="settings" id="settings-get" style="display:none">
-        <h2>Get Twitter followers</h2>
+        <h1>Get Twitter followers</h1>
 
-        <div class="form-horizontal">
-            <div class="control-group">
-                <label class="control-label" for="q">Twitter user</label>
-                <div class="controls">
-                    <input type="text" name="q" size="80" id="q" placeholder="@spikingneural">
-                    <button class="btn btn-primary" type="button" id="submit" disabled="disabled">Go!</button>
-                </div>
-            </div>
+        <div class="input-append">
+            <input type="text" name="q" size="80" id="q" placeholder="Twitter user name">
+            <button class="btn btn-primary" type="button" id="submit" disabled="disabled"></button>
         </div>
     </div>
 
     <div class="settings" id="settings-clear" style="display:none">
-         <hr>
-         <h2>Change settings</h2>
-         <button class="btn btn-danger" type="button" id="clear-data" disabled="disabled">Clear data</button>
-         to start over. Alternatively, make another dataset.</p>
+         <button class="btn btn-danger btn-large" type="button" id="clear-data" disabled="disabled"></button>
+         <p>* this will clear all of your data
+         </p>
     </div>
 
   </body>

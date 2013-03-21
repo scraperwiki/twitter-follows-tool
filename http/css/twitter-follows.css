@@ -1,5 +1,6 @@
 body {
   padding: 20px;
+  text-align: center;
 }
 
 h2 {
@@ -10,3 +11,18 @@ h2 {
   margin-right: 10px;
 }
 
+p.lead strong {
+  font-weight: inherit;
+  background-color: #ff9; 
+  padding: 3px 6px;
+}
+
+#settings-clear button {
+  margin: 40px 0 5px 0;
+}
+
+.alert {
+  text-align: left;
+  width: 30%;
+  margin: 0 auto 40px auto;
+}
