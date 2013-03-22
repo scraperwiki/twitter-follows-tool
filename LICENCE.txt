@@ -1,3 +1,18 @@
+Short version: for normal people
+--------------------------------
+
+This tool's code is proprietary.
+
+As long as you're paying for the tool, you can use it on the ScraperWiki
+platform however you like, including making modifications.
+
+If for any reason we stop providing the platform, you can then use
+the tool anywhere else you like.
+
+
+Full version: for lawyers
+-------------------------
+
 Unless otherwise stated, all the files in this directory and subdirectories of
 it - referred to in this licence as "the files" are Copyright (C) Scraperwiki
 Ltd. The use of all the files is subject to the following non-exclusive
@@ -43,7 +58,7 @@ are replaced by other files offering at least broadly similar functionality;
 and (b) the operation of a different service on which the files may be run; or
 (c) both (a) and (b) at the same time.
  
-"ScraperWIki operator" means ScraperWiki Ltd and any of its successors or
+"ScraperWiki operator" means ScraperWiki Ltd and any of its successors or
 assigns.
 
 [8] This licence is to be construed in accordance with the law of England.
