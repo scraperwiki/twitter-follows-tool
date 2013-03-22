@@ -31,5 +31,21 @@ than a Scraperwiki Ltd server or that computer itself.
 [6] In this licence "adaptation" has the same meaning as in the Copyright,
 Designs and Patents Act 1988.
 
-[7] This licence is to be construed in accordance with the law of England.
+[7] If ScraperWiki Ltd ceases to operate a service upon which any of the files
+may be run and no equivalent service is offered by a ScraperWiki operator, then
+any file affected is licensed to any individual who had permission under [1]
+above immediately prior to the cessation, under the Simplified BSD License.
+
+Where:
+ 
+"equivalent service" includes (a) a situation where one or more of the files
+are replaced by other files offering at least broadly similar functionality;
+and (b) the operation of a different service on which the files may be run; or
+(c) both (a) and (b) at the same time.
+ 
+"ScraperWIki operator" means ScraperWiki Ltd and any of its successors or
+assigns.
+
+[8] This licence is to be construed in accordance with the law of England.
+
 
