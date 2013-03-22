@@ -1,0 +1,35 @@
+Unless otherwise stated, all the files in this directory and subdirectories of
+it - referred to in this licence as "the files" are Copyright (C) Scraperwiki
+Ltd. The use of all the files is subject to the following non-exclusive
+copyright licence.
+
+[1] The files may be used only by an individual who has permission, under a
+contract with Scraperwiki Ltd (either directly or via a third party such as the
+individual's employer), to use a Scraperwiki dataset in which the files are
+contained.
+
+[2] The files may be used only as long as the permission mentioned in [1]
+continues. If the relevant contract with Scraperwiki Ltd ends (for whatever
+reason) all permissions under this licence are withdrawn.
+
+[3] On any Scraperwiki Ltd sever, the files may be copied, viewed, edited,
+executed or otherwise used for their intended purpose; provided that no copies
+of any of the files, or any adaptation of any of the files, is made on any
+machine other than a Scraperwiki Ltd server.
+
+[4] The files may be copied by an individual who has permission (under [1]
+above) to a computer under that individual's control provided that they are all
+deleted once the permission ends.
+
+On that computer, the files may be copied, viewed, edited, executed or
+otherwise used for their intended purpose; provided that no copies of any of
+the files, or any adaptation of any of the files, is made on any machine other
+than a Scraperwiki Ltd server or that computer itself.
+
+[5] The files may not be used in any other way.
+
+[6] In this licence "adaptation" has the same meaning as in the Copyright,
+Designs and Patents Act 1988.
+
+[7] This licence is to be construed in accordance with the law of England.
+
