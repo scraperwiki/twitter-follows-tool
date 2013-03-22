@@ -3,10 +3,10 @@ it - referred to in this licence as "the files" are Copyright (C) Scraperwiki
 Ltd. The use of all the files is subject to the following non-exclusive
 copyright licence.
 
-[1] The files may be used only by an individual who has permission, under a
-contract with Scraperwiki Ltd (either directly or via a third party such as the
-individual's employer), to use a Scraperwiki dataset in which the files are
-contained.
+[1] The files may be used only by an individual who has permission (under a
+contract with ScraperWiki Ltd, either directly or via a third party such as the
+individual's employer) to use a ScraperWiki tool or dataset or view in which
+the files are contained.
 
 [2] The files may be used only as long as the permission mentioned in [1]
 continues. If the relevant contract with Scraperwiki Ltd ends (for whatever
