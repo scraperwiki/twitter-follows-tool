@@ -6,8 +6,8 @@ This tool's code is proprietary.
 As long as you're paying for the tool, you can use it on the ScraperWiki
 platform however you like, including making modifications.
 
-If for any reason we stop providing the platform, you can then use
-the tool anywhere else you like.
+If for any reason we stop providing the platform, it becomes open source, and
+you use it anywhere you like.
 
 
 Full version: for lawyers
