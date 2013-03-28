@@ -92,7 +92,7 @@ def save_user(batch, user, table_name):
 
     data['batch'] = batch # this is needed internally to track progress of getting all the followers
     
-    scraperwiki.sqlite.save(['id'], data, table_name=table_name)
+    scraperwiki.sql.save(['id'], data, table_name=table_name)
 
 # After detecting an auth failed error mid work, call this
 def clear_auth_and_restart():
@@ -132,7 +132,7 @@ def save_status():
     # 2) all followers transferred into the new batch so far
     # i.e. all those for whom batch >= (current_batch - 1)
     try:
-        batch_got = scraperwiki.sqlite.select("count(*) as c from twitter_followers where batch >= %d" % (current_batch - 1))[0]['c']
+        batch_got = scraperwiki.sql.select("count(*) as c from twitter_followers where batch >= %d" % (current_batch - 1))[0]['c']
     except:
         batch_got = 0
 
@@ -144,7 +144,7 @@ def save_status():
         'batch_expected': batch_expected,
         'current_status': current_status
     }
-    scraperwiki.sqlite.save(['id'], data, table_name='status')
+    scraperwiki.sql.save(['id'], data, table_name='status')
 
 # Load in all our progress variables
 current_batch = 1
@@ -156,7 +156,7 @@ def get_status():
     global current_batch, next_cursor, batch_got, batch_expected, current_status
 
     try:
-        data = scraperwiki.sqlite.select("* from status where id='followers'")
+        data = scraperwiki.sql.select("* from status where id='followers'")
     except sqlite3.OperationalError, e:
         if str(e) == "no such table: status":
             return
@@ -182,15 +182,15 @@ try:
     #   b. callback_url oauth_verifier: have just come back from Twitter with these oauth tokens
     #   c. "clean-slate": wipe database and start again
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
-        scraperwiki.sqlite.execute("drop table if exists twitter_followers")
-        scraperwiki.sqlite.execute("drop table if exists status")
+        scraperwiki.sql.execute("drop table if exists twitter_followers")
+        scraperwiki.sql.execute("drop table if exists status")
         os.system("crontab -r >/dev/null 2>&1")
         set_status_and_exit('clean-slate', 'error', 'No user set')
         sys.exit()
 
     # Make the followers table *first* with dumb data, calling DumpTruck directly,
     # so it appears before the status one in the list
-    scraperwiki.sqlite.dt.create_table({'id': 1}, 'twitter_followers')
+    scraperwiki.sql.dt.create_table({'id': 1}, 'twitter_followers')
 
     # Get user we're working on from file we store it in
     screen_name = open("user.txt").read().strip()
