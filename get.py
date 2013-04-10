@@ -210,7 +210,7 @@ try:
     batch_expected = profile[0]['followers_count']
 
     # Things basically working, so make sure we run again
-    os.system("crontab tool/crontab")
+    os.system("crontab -l >/dev/null 2>&1 || crontab tool/crontab")
 
     # Get as many pages in the batch as we can (most likely 15!)
     while True:
