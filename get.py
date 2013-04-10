@@ -6,7 +6,6 @@ import urllib
 import sys
 import collections
 import dateutil.parser
-import requests
 import subprocess
 import httplib
 import sqlite3
@@ -126,7 +125,7 @@ def set_status_and_exit(status, typ, message, extra = {}):
     extra['status'] = status
     print json.dumps(extra)
 
-    requests.post("https://x.scraperwiki.com/api/status", data={'type':typ, 'message':message})
+    scraperwiki.status(typ, message)
 
     current_status = status
     save_status()
@@ -230,6 +229,7 @@ try:
     os.system("crontab -l >/dev/null 2>&1 || crontab tool/crontab")
 
     # Get as many pages in the batch as we can (most likely 15!)
+    onetime = 'ONETIME' in os.environ
     while True:
         #raise httplib.IncompleteRead('hi') # for testing
         #print "getting", next_cursor
@@ -242,6 +242,7 @@ try:
         ids = result['ids']
 
         # and then the user details for all the ids
+        double_break = False
         for chunk in chunks(ids, 100):
             users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
             data = []
@@ -251,19 +252,29 @@ try:
             scraperwiki.sql.save(['id'], data, table_name="twitter_followers")
             save_status()
 
+            # If we have exactly the number of followers claimed, then only do one
+            # API call each time to save on rate limiting. This will gradually
+            # refresh everything anyway...  And realistically, if someone has
+            # churning followers, we'll get badly out of count soon enough.
+            if batch_got == batch_expected:
+                double_break = True
+                break
+
+            # If being run from the user interface, return quickly after being
+            # sure we've got *something* (the Javascript will then spawn us
+            # again in the background to slowly get the rest)
+            if onetime:
+                double_break = True
+                break
+        if double_break:
+            break
+      
         # we have all the info for one page - record got and save it
         pages_got += 1
         next_cursor = result['next_cursor']
 
         # While debugging, only do one page to avoid rate limits by uncommenting this:
         # break
-
-        # If we have exactly the number of followers claimed, then only do one
-        # API call each time to save on rate limiting. This will gradually
-        # refresh everything anyway...  And realistically, if someone has
-        # churning followers, we'll get badly out of count soon enough.
-        if batch_got == batch_expected:
-            break
 
         if next_cursor == 0:
             # We've finished a batch
