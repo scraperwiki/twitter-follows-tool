@@ -12,8 +12,21 @@ import httplib
 import sqlite3
 import datetime
 import scraperwiki
+import httplib
 
 from secrets import *
+
+# Horrendous hack to work around some Twitter / Python incompatibility
+# http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
+def patch_http_response_read(func):
+    def inner(*args):
+        try:
+            return func(*args)
+        except httplib.IncompleteRead, e:
+            return e.partial
+
+    return inner
+httplib.HTTPResponse.read = patch_http_response_read(httplib.HTTPResponse.read)
 
 # Make sure you install this version of "twitter":
 # http://pypi.python.org/pypi/twitter
