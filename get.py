@@ -84,7 +84,7 @@ def do_tool_oauth():
 # Helper functions
 
 # Stores one Twitter user in the ScraperWiki database
-def save_user(batch, user, table_name):
+def convert_user(batch, user):
     data = collections.OrderedDict()
 
     data['id'] = user['id']
@@ -104,8 +104,8 @@ def save_user(batch, user, table_name):
     data['created_at'] = dateutil.parser.parse(user['created_at'])
 
     data['batch'] = batch # this is needed internally to track progress of getting all the followers
-    
-    scraperwiki.sql.save(['id'], data, table_name=table_name)
+
+    return data
 
 # After detecting an auth failed error mid work, call this
 def clear_auth_and_restart():
@@ -185,6 +185,10 @@ def get_status():
     batch_expected = data['batch_expected']
     current_status = data['current_status']
 
+# http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+def chunks(l, n):
+    return [l[i:i+n] for i in range(0, len(l), n)]
+
 #########################################################################
 # Main code
 
@@ -228,17 +232,28 @@ try:
     # Get as many pages in the batch as we can (most likely 15!)
     while True:
         #raise httplib.IncompleteRead('hi') # for testing
-
         #print "getting", next_cursor
+
+        # get the identifiers of followers - one page worth (up to 5000 people)
         if next_cursor == -1:
-            result = tw.followers.list(screen_name=screen_name)
+            result = tw.followers.ids(screen_name=screen_name)
         else:
-            result = tw.followers.list(screen_name=screen_name, cursor=next_cursor)
+            result = tw.followers.ids(screen_name=screen_name, cursor=next_cursor)
+        ids = result['ids']
+
+        # and then the user details for all the ids
+        for chunk in chunks(ids, 100):
+            users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
+            data = []
+            for user in users:
+                datum = convert_user(current_batch, user)
+                data.append(datum)
+            scraperwiki.sql.save(['id'], data, table_name="twitter_followers")
+            save_status()
+
+        # we have all the info for one page - record got and save it
         pages_got += 1
-        for user in result['users']:
-            save_user(current_batch, user, "twitter_followers")
         next_cursor = result['next_cursor']
-        save_status()
 
         # While debugging, only do one page to avoid rate limits by uncommenting this:
         # break
