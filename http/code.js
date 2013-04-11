@@ -66,7 +66,7 @@ var scrape_action = function() {
     // Rename the dataset in the user interface
     // (only when they press the main submit button - not for refreshes)
     if ($(this).attr('id') == 'submit') {
-        scraperwiki.tool.rename("@" + q + "'s Twitter followers")
+        scraperwiki.tool.rename("Twitter followers of @" + q)
     }
 
     // Pass various OAuth bits of data to the Python script that is going to do the work
