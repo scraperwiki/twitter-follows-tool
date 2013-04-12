@@ -120,8 +120,10 @@ var show_hide_stuff = function(done) {
        
             $('.batch_got').text(results['batch_got'])
             $('.batch_expected').text(results['batch_expected'])
-            var tweets_per_request = 20
-            var request_per_hour = 15 // we run @hourly in cron, and grab 15 each time until Twitter stops us
+	    // we run @hourly in cron, and until Twitter stops us, which happens with
+	    // users/lookup rate limit (18000 in 15 min window, so three chunks of 5000)
+            var tweets_per_request = 5000
+            var request_per_hour = 3 
             var hours_left = Math.round((results['batch_expected'] - results['batch_got']) / request_per_hour / tweets_per_request)
             var days_left = Math.round(hours_left / 24)
             if (hours_left <= 1) {
