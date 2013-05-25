@@ -108,7 +108,7 @@ var show_hide_stuff = function(done) {
         $('.who').text(data)
 
         // Show right form
-        scraperwiki.sql('select * from status where id = "followers"', function(results){
+        scraperwiki.sql('select * from __status where id = "followers"', function(results){
             results = results[0]
 
             // results['batch_expected'] += 1; // debugging, force a state

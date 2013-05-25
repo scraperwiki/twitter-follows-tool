@@ -156,7 +156,7 @@ def save_status():
         'batch_expected': batch_expected,
         'current_status': current_status
     }
-    scraperwiki.sql.save(['id'], data, table_name='status')
+    scraperwiki.sql.save(['id'], data, table_name='__status')
 
 # Load in all our progress variables
 current_batch = 1
@@ -168,9 +168,9 @@ def get_status():
     global current_batch, next_cursor, batch_got, batch_expected, current_status
 
     try:
-        data = scraperwiki.sql.select("* from status where id='followers'")
+        data = scraperwiki.sql.select("* from __status where id='followers'")
     except sqlite3.OperationalError, e:
-        if str(e) == "no such table: status":
+        if str(e) == "no such table: __status":
             return
         raise
     if len(data) == 0:
@@ -193,13 +193,23 @@ def chunks(l, n):
 
 pages_got = 0
 try:
+    # Rename old status table to new __status name.
+    # This can be removed after it has been active long enough to
+    # update all existing tools.
+    try :
+        scraperwiki.sql.execute("SELECT 1 FROM status")
+    except sqlite3.OperationalError:
+       pass
+    else:
+        scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
+
     # Parameters to this command vary:
     #   a. None: try and scrape Twitter followers
     #   b. callback_url oauth_verifier: have just come back from Twitter with these oauth tokens
     #   c. "clean-slate": wipe database and start again
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
         scraperwiki.sql.execute("drop table if exists twitter_followers")
-        scraperwiki.sql.execute("drop table if exists status")
+        scraperwiki.sql.execute("drop table if exists __status")
         os.system("crontab -r >/dev/null 2>&1")
         set_status_and_exit('clean-slate', 'error', 'No user set')
         sys.exit()
