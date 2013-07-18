@@ -1,4 +1,6 @@
 {
   "displayName": "Get Twitter followers",
-  "description": "Any user's followers. You need a Twitter account."
+  "description": "Any user's followers."
+  "icon": "https://s3-eu-west-1.amazonaws.com/sw-icons/tool-icon-twitter.png",
+  "color": "#3cf"
 }
