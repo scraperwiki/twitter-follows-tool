@@ -26,14 +26,11 @@ var done_exec_main = function(content) {
             // set another (full) run going in the background to start getting older tweets
             scraperwiki.exec('tool/get.py >/dev/null 2>&1 &',
               function() {
-                var datasetUrl = "/dataset/" + scraperwiki.box
-                scraperwiki.tool.redirect(datasetUrl)
               },
               function(obj, err, exception) {
                   something_went_wrong(err + "! " + exception)
               }
             )
-            return
         }
 
         // Show whatever we would on loading page

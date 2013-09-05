@@ -12,6 +12,7 @@ import sqlite3
 import datetime
 import scraperwiki
 import httplib
+import random
 
 from secrets import *
 
@@ -235,8 +236,14 @@ try:
     profile = tw.users.lookup(screen_name=screen_name)
     batch_expected = profile[0]['followers_count']
 
-    # Things basically working, so make sure we run again
-    os.system("crontab -l >/dev/null 2>&1 || crontab tool/crontab")
+    # Things basically working, so make sure we run again by writing a crontab.
+    if not os.path.isfile("crontab"):
+        crontab = open("tool/crontab.template").read()
+        # ... run at a random minute to distribute load XXX platform should do this for us
+        crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
+        open("crontab", "w").write(crontab)
+    os.system("crontab crontab")
+
 
     # Get as many pages in the batch as we can (most likely 15!)
     onetime = 'ONETIME' in os.environ
