@@ -225,9 +225,9 @@ try:
     # Connect to Twitter
     tw = do_tool_oauth()
 
-    # A batch is one scan through the list of followers - we have to scan as we only
-    # get 20 per API call, and have 15 API calls / 15 minutes (as of Feb 2013).
-    # The cursor is Twitter's identifier of where in the current batch we are.
+    # A batch is one scan through the list of followers - we have to scan as
+    # our API calls are limited.  The cursor is Twitter's identifier of where
+    # in the current batch we are.
     get_status()
     # Note that each user is only in the most recent batch they've been found in
     # (we don't keep all the history)
