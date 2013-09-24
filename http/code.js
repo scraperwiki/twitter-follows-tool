@@ -117,6 +117,7 @@ var show_hide_stuff = function(done) {
        
             $('.batch_got').text(results['batch_got'])
             $('.batch_expected').text(results['batch_expected'])
+            $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
 	    // we run @hourly in cron, and until Twitter stops us, which happens with
 	    // users/lookup rate limit (18000 in 15 min window, so three chunks of 5000)
             var tweets_per_request = 5000
