@@ -272,14 +272,6 @@ try:
             scraperwiki.sql.save(['id'], data, table_name="twitter_followers")
             save_status()
 
-            # If we have exactly the number of followers claimed, then only do one
-            # API call each time to save on rate limiting. This will gradually
-            # refresh everything anyway...  And realistically, if someone has
-            # churning followers, we'll get badly out of count soon enough.
-            if batch_got == batch_expected:
-                double_break = True
-                break
-
             # If being run from the user interface, return quickly after being
             # sure we've got *something* (the Javascript will then spawn us
             # again in the background to slowly get the rest)
@@ -300,7 +292,10 @@ try:
             # We've finished a batch
             next_cursor = -1
             current_batch += 1
-            save_status()
+
+            # Disable cron job, we're done
+            os.system("crontab -r >/dev/null 2>&1")
+            set_status_and_exit("ok-done", 'ok', "Fully up to date")
             break
 
 except twitter.api.TwitterHTTPError, e:
@@ -330,11 +325,7 @@ except httplib.IncompleteRead, e:
         set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
 
 # Save progress message
-if batch_got == batch_expected:
-    os.system("crontab -r >/dev/null 2>&1")
-    set_status_and_exit("ok-done", 'ok', "Fully up to date")
-else:
-    set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
+set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
 
 
 
