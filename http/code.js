@@ -10,7 +10,7 @@ var something_went_wrong = function(content) {
     $('body').prepend(p)
 }
 
-// Handle response from exec of get.py
+// Handle response from exec of twfollow.py
 var done_exec_main = function(content) {
     console.log(content)
     try {
@@ -24,7 +24,7 @@ var done_exec_main = function(content) {
 
         if (response['status'] == 'ok-updating') {
             // set another (full) run going in the background to start getting older tweets
-            scraperwiki.exec('tool/get.py >/dev/null 2>&1 &',
+            scraperwiki.exec('tool/twfollow.py >/dev/null 2>&1 &',
               function() {
               },
               function(obj, err, exception) {
@@ -34,7 +34,7 @@ var done_exec_main = function(content) {
         }
 
         // Show whatever we would on loading page
-        // i.e. read status from database that get.py set
+        // i.e. read status from database that twfollow.py set
         show_hide_stuff()
     } catch(e) {
         // Otherwise an unknown error - e.g. an unexpected stack trace
@@ -44,7 +44,7 @@ var done_exec_main = function(content) {
 }
 
 // Event function for when they click on the Go!, Refresh! or Reauthenticate buttons.
-// Calls out to the Python script get.py, which does the actual Twitter
+// Calls out to the Python script twfollow.py, which does the actual Twitter
 // calling. 
 var scrape_action = function() {
     $('pre,.alert,.help-inline').remove()
@@ -67,7 +67,7 @@ var scrape_action = function() {
     }
 
     // Pass various OAuth bits of data to the Python script that is going to do the work
-    scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; ONETIME=1 tool/get.py "' + callback_url + '" "' + oauth_verifier + '"', 
+    scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; ONETIME=1 tool/twfollow.py "' + callback_url + '" "' + oauth_verifier + '"', 
         done_exec_main, 
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception)
@@ -81,7 +81,7 @@ var clear_action = function() {
     $('pre,.alert,.help-inline').remove()
 
     scraperwiki.tool.rename("Get Twitter followers")
-    scraperwiki.exec("tool/get.py clean-slate",
+    scraperwiki.exec("tool/twfollow.py clean-slate",
         done_exec_main,
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception) 
