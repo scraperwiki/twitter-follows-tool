@@ -237,7 +237,8 @@ try:
     batch_expected = profile[0]['followers_count']
 
     # Things basically working, so make sure we run again by writing a crontab.
-    if not os.path.isfile("crontab"):
+    # XXX for now always rewrite crontab
+    if True: #or not os.path.isfile("crontab"):
         crontab = open("tool/crontab.template").read()
         # ... run at a random minute to distribute load XXX platform should do this for us
         crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
