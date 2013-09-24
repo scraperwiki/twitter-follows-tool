@@ -125,7 +125,6 @@ def set_status_and_exit(status, typ, message, extra = {}):
     global current_status
 
     extra['status'] = status
-    extra['when'] = datetime.datetime.now().isoformat()
     print json.dumps(extra)
 
     scraperwiki.status(typ, message)
@@ -157,7 +156,9 @@ def save_status():
         'next_cursor': next_cursor,
         'batch_got': batch_got,
         'batch_expected': batch_expected,
-        'current_status': current_status
+        'current_status': current_status,
+        'when': datetime.datetime.now().isoformat()
+
     }
     scraperwiki.sql.save(['id'], data, table_name='__status')
 
