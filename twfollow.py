@@ -329,7 +329,8 @@ except httplib.IncompleteRead, e:
 
 # Save progress message
 if batch_got == batch_expected:
-    set_status_and_exit("ok-updating", 'ok', "Fully up to date")
+    os.system("crontab -r >/dev/null 2>&1")
+    set_status_and_exit("ok-done", 'ok', "Fully up to date")
 else:
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
 

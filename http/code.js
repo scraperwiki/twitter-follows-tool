@@ -134,14 +134,6 @@ var show_hide_stuff = function(done) {
             }
             $('#eta').text(eta)
 
-            $('#got-some').hide()
-            $('#got-all').hide()
-            if (results['batch_got'] == results['batch_expected']) {
-                $('#got-all').show()
-            } else {
-                $('#got-some').show()
-            }
-
             $('pre,.alert,.help-inline').remove()
             $('.control-group').removeClass('error')
 
@@ -163,6 +155,9 @@ var show_hide_stuff = function(done) {
                 $('#settings-clear').show()
             } else if (results['current_status'] == 'ok-updating') {
                 $('#settings-working').show()
+                $('#settings-clear').show()
+            } else if (results['current_status'] == 'ok-done') {
+                $('#settings-done').show()
                 $('#settings-clear').show()
             } else if (results['current_status'] == 'clean-slate') {
                 $('#settings-get').show()
