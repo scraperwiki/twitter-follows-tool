@@ -13,6 +13,7 @@ import datetime
 import scraperwiki
 import httplib
 import random
+import datetime
 
 from secrets import *
 
@@ -124,6 +125,7 @@ def set_status_and_exit(status, typ, message, extra = {}):
     global current_status
 
     extra['status'] = status
+    extra['when'] = datetime.datetime.now().isoformat()
     print json.dumps(extra)
 
     scraperwiki.status(typ, message)
