@@ -150,7 +150,7 @@ def save_status():
     except:
         batch_got = 0
 
-    data = { 
+    data = {
         'id': 'followers',
         'current_batch': current_batch,
         'next_cursor': next_cursor,
@@ -240,8 +240,7 @@ try:
     batch_expected = profile[0]['followers_count']
 
     # Things basically working, so make sure we run again by writing a crontab.
-    # XXX for now always rewrite crontab
-    if True: #or not os.path.isfile("crontab"):
+    if not os.path.isfile("crontab"):
         crontab = open("tool/crontab.template").read()
         # ... run at a random minute to distribute load XXX platform should do this for us
         crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
@@ -281,7 +280,7 @@ try:
                 break
         if double_break:
             break
-      
+
         # we have all the info for one page - record got and save it
         pages_got += 1
         next_cursor = result['next_cursor']
@@ -305,7 +304,7 @@ except twitter.api.TwitterHTTPError, e:
 
     # https://dev.twitter.com/docs/error-codes-responses
     obj = json.loads(e.response_data)
-    code = obj['errors'][0]['code'] 
+    code = obj['errors'][0]['code']
     # authentication failure
     if (code in [32, 89]):
         clear_auth_and_restart()
