@@ -11,7 +11,7 @@ var something_went_wrong = function(content) {
 }
 
 // Handle response from exec of twfollow.py
-var done_exec_main = function(content) {
+var done_exec_main = function(content, rename) {
     console.log(content)
     try {
         response = JSON.parse(content)
@@ -35,7 +35,7 @@ var done_exec_main = function(content) {
 
         // Show whatever we would on loading page
         // i.e. read status from database that twfollow.py set
-        show_hide_stuff()
+        show_hide_stuff(null, rename)
     } catch(e) {
         // Otherwise an unknown error - e.g. an unexpected stack trace
         something_went_wrong(content)
@@ -60,15 +60,16 @@ var scrape_action = function() {
 
     $(this).addClass('loading').html('Loading&hellip;').attr('disabled', true)
 
-    // Rename the dataset in the user interface
-    // (only when they press the main submit button - not for refreshes)
+    var rename = false
     if ($(this).attr('id') == 'submit') {
-        scraperwiki.tool.rename("Twitter followers of @" + q)
+      rename = true
     }
 
     // Pass various OAuth bits of data to the Python script that is going to do the work
     scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; ONETIME=1 tool/twfollow.py "' + callback_url + '" "' + oauth_verifier + '"', 
-        done_exec_main, 
+        function(content) {
+            done_exec_main(content, rename)
+        },
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception)
         }
@@ -80,9 +81,11 @@ var clear_action = function() {
     $(this).addClass('loading').html('Clearing&hellip;').attr('disabled', true)
     $('pre,.alert,.help-inline').remove()
 
-    scraperwiki.tool.rename("Get Twitter followers")
+    scraperwiki.dataset.name("Get Twitter followers")
     scraperwiki.exec("tool/twfollow.py clean-slate",
-        done_exec_main,
+        function(content) {
+            done_exec_main(content, false)
+        },
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception) 
         }
@@ -97,12 +100,16 @@ var fix_button_texts = function() {
 }
  
 // Show the right form (get settings, or the refresh data one)
-var show_hide_stuff = function(done) {
+var show_hide_stuff = function(done, rename) {
     // Find out what user it is
     scraperwiki.exec('touch user.txt; cat user.txt', function(data) {
         data = $.trim(data)
         $('#q').val(data)
         $('.who').text(data)
+
+        if (rename) {   
+            scraperwiki.dataset.name("Twitter followers of @" + data)
+        }
 
         // Show right form
         scraperwiki.sql('select * from __status where id = "followers"', function(results){
@@ -144,6 +151,7 @@ var show_hide_stuff = function(done) {
                 // if during auth, click it
                 if (oauth_verifier) {
                     $("#reauthenticate").trigger("click")
+                    scraperwiki.dataset.name("Twitter followers of @" + data)
                 }
             } else if (results['current_status'] == 'not-there') {
                 $('#settings-get').show()
@@ -209,3 +217,6 @@ $(document).ready(function() {
     $('#clear-data').on('click', clear_action)
     $('#submit,#reauthenticate').on('click', scrape_action)
 })
+
+
+

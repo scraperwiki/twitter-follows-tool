@@ -250,6 +250,7 @@ try:
 
     # Get as many pages in the batch as we can (most likely 15!)
     onetime = 'ONETIME' in os.environ
+    live_dataset = 'LIVE_DATASET' in os.environ
     while True:
         #raise httplib.IncompleteRead('hi') # for testing
         #print "getting", next_cursor
@@ -293,9 +294,10 @@ try:
             next_cursor = -1
             current_batch += 1
 
-            # Disable cron job, we're done
-            os.system("crontab -r >/dev/null 2>&1")
-            set_status_and_exit("ok-done", 'ok', "Fully up to date")
+            if not live_dataset:
+                # Disable cron job, we're done
+                os.system("crontab -r >/dev/null 2>&1")
+                set_status_and_exit("ok-done", 'ok', "Fully up to date")
             break
 
 except twitter.api.TwitterHTTPError, e:
