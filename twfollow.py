@@ -220,7 +220,10 @@ try:
 
     # Make the followers table *first* with dumb data, calling DumpTruck directly,
     # so it appears before the status one in the list
-    scraperwiki.sql.dt.create_table({'id': 1}, 'twitter_followers')
+    scraperwiki.sql.dt.create_table({'id': 1, 'batch': 1}, 'twitter_followers')
+
+    scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
+                            "ON twitter_followers (batch)")
 
     # Get user we're working on from file we store it in
     screen_name = open("user.txt").read().strip()
