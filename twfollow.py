@@ -17,7 +17,7 @@ import datetime
 
 from secrets import *
 
-MAX_TO_GET=5
+MAX_TO_GET=100000
 
 # Horrendous hack to work around some Twitter / Python incompatibility
 # http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
@@ -279,9 +279,9 @@ try:
             save_status()
 
             # Don't allow more than a certain number
-            if batch_got > MAX_TO_GET:
+            if batch_got >= MAX_TO_GET:
                 os.system("crontab -r >/dev/null 2>&1")
-                set_status_and_exit("ok-done", 'ok', "Reached %d limit" % MAX_TO_GET)
+                set_status_and_exit("ok-limit", 'ok', "Reached %d follower limit" % MAX_TO_GET)
 
             # If being run from the user interface, return quickly after being
             # sure we've got *something* (the Javascript will then spawn us
