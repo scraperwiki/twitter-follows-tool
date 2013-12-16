@@ -168,6 +168,9 @@ var show_hide_stuff = function(done, rename) {
             } else if (results['current_status'] == 'ok-done') {
                 $('#settings-done').show()
                 $('#settings-clear').show()
+            } else if (results['current_status'] == 'ok-limit') {
+                $('#settings-limit').show()
+                $('#settings-clear').show()
             } else if (results['current_status'] == 'clean-slate') {
                 $('#settings-get').show()
             } else {

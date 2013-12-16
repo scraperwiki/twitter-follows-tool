@@ -17,6 +17,8 @@ import datetime
 
 from secrets import *
 
+MAX_TO_GET=100000
+
 # Horrendous hack to work around some Twitter / Python incompatibility
 # http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
 def patch_http_response_read(func):
@@ -276,6 +278,11 @@ try:
             scraperwiki.sql.save(['id'], data, table_name="twitter_followers")
             save_status()
 
+            # Don't allow more than a certain number
+            if batch_got >= MAX_TO_GET:
+                os.system("crontab -r >/dev/null 2>&1")
+                set_status_and_exit("ok-limit", 'ok', "Reached %d follower limit" % MAX_TO_GET)
+
             # If being run from the user interface, return quickly after being
             # sure we've got *something* (the Javascript will then spawn us
             # again in the background to slowly get the rest)
@@ -300,7 +307,7 @@ try:
             if not live_dataset:
                 # Disable cron job, we're done
                 os.system("crontab -r >/dev/null 2>&1")
-                set_status_and_exit("ok-done", 'ok', "Fully up to date")
+                set_status_and_exit("ok-done", 'ok', "Finished")
             break
 
 except twitter.api.TwitterHTTPError, e:
