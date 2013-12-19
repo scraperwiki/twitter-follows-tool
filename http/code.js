@@ -65,6 +65,9 @@ var scrape_action = function() {
       rename = true
     }
 
+    // show_hide_stuff will check this variable later and contact intercom.io
+    window.trackSearch = true
+
     // Pass various OAuth bits of data to the Python script that is going to do the work
     scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; ONETIME=1 tool/twfollow.py "' + callback_url + '" "' + oauth_verifier + '"', 
         function(content) {
@@ -97,6 +100,13 @@ var fix_button_texts = function() {
     $('#reauthenticate').removeClass('loading').html('Reauthenticate').attr('disabled', false)
     $('#submit').removeClass('loading').html('Go').attr('disabled', false)
     $('#clear-data').removeClass('loading').html('Monitor someone else*').attr('disabled', false)
+}
+
+var track_search_if_required = function() {
+    if(window.trackSearch) {
+        scraperwiki.reporting.user({increments: {tf_searches: 1}})
+        window.trackSearch = undefined
+    }
 }
  
 // Show the right form (get settings, or the refresh data one)
@@ -165,12 +175,15 @@ var show_hide_stuff = function(done, rename) {
             } else if (results['current_status'] == 'ok-updating') {
                 $('#settings-working').show()
                 $('#settings-clear').show()
+                track_search_if_required()
             } else if (results['current_status'] == 'ok-done') {
                 $('#settings-done').show()
                 $('#settings-clear').show()
+                track_search_if_required()
             } else if (results['current_status'] == 'ok-limit') {
                 $('#settings-limit').show()
                 $('#settings-clear').show()
+                track_search_if_required()
             } else if (results['current_status'] == 'clean-slate') {
                 $('#settings-get').show()
             } else {
