@@ -85,6 +85,9 @@ var clear_action = function() {
     $('pre,.alert,.help-inline').remove()
 
     scraperwiki.dataset.name("Get Twitter followers")
+
+    scraperwiki.reporting.user({increments: {tf_resets: 1}})
+
     scraperwiki.exec("tool/twfollow.py clean-slate",
         function(content) {
             done_exec_main(content, false)
