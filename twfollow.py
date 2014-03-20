@@ -14,10 +14,12 @@ import scraperwiki
 import httplib
 import random
 import datetime
+import logging
 
 from secrets import *
 
 MAX_TO_GET=100000
+logging.basicConfig(level=logging.INFO)
 
 # Horrendous hack to work around some Twitter / Python incompatibility
 # http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
@@ -183,15 +185,31 @@ def get_status():
     batch_got = data['batch_got']
     batch_expected = data['batch_expected']
     current_status = data['current_status']
+    return data
 
 # http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
 def chunks(l, n):
     return [l[i:i+n] for i in range(0, len(l), n)]
 
+
+def move_legacy_table():
+    # Rename old status table to new __status name.
+    # This can be removed after it has been active long enough to
+    # update all existing tools.
+    try :
+        scraperwiki.sql.execute("SELECT 1 FROM status")
+    except sqlite3.OperationalError:
+        logging.info("No legacy status table detected.")
+        pass
+    else:
+        logging.warn("Legacy status table detected.")
+        scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
+
 #########################################################################
 # Main code
 
 def main_function():
+    logging.info("main_function()")
     # Load in all our progress variables
     current_batch = 1
     next_cursor = -1
@@ -203,18 +221,14 @@ def main_function():
     # Rename old status table to new __status name.
     # This can be removed after it has been active long enough to
     # update all existing tools.
-    try :
-        scraperwiki.sql.execute("SELECT 1 FROM status")
-    except sqlite3.OperationalError:
-       pass
-    else:
-        scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
+    move_legacy_table()
 
     # Parameters to this command vary:
     #   a. None: try and scrape Twitter followers
     #   b. callback_url oauth_verifier: have just come back from Twitter with these oauth tokens
     #   c. "clean-slate": wipe database and start again
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
+        logging.warn("Cleaning slate")
         scraperwiki.sql.execute("drop table if exists twitter_followers")
         scraperwiki.sql.execute("drop table if exists __status")
         os.system("crontab -r >/dev/null 2>&1")
@@ -233,40 +247,51 @@ def main_function():
 
     # Connect to Twitter
     tw = do_tool_oauth()
-
+    logging.info("Authenticated")
     # A batch is one scan through the list of followers - we have to scan as
     # our API calls are limited.  The cursor is Twitter's identifier of where
     # in the current batch we are.
-    get_status()
+    status_info = get_status()
+    logging.info("Loaded status: {!r}".format(status_info))
+
     # Note that each user is only in the most recent batch they've been found in
     # (we don't keep all the history)
 
     # Look up latest followers count
     profile = tw.users.lookup(screen_name=screen_name)
+    logging.debug("User details: {!r}".format(profile))
     batch_expected = profile[0]['followers_count']
+    logging.info("Batch expected: {!r}".format(batch_expected))
 
     # Things basically working, so make sure we run again by writing a crontab.
     if not os.path.isfile("crontab"):
+        logging.warn("Crontab not detected. Installing...")
         crontab = open("tool/crontab.template").read()
         # ... run at a random minute to distribute load XXX platform should do this for us
         crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
         open("crontab", "w").write(crontab)
+    else:
+        logging.info("Crontab present.")
     os.system("crontab crontab")
-
 
     # Get as many pages in the batch as we can (most likely 15!)
     onetime = 'ONETIME' in os.environ
     live_dataset = 'LIVE_DATASET' in os.environ
+    logging.info("Is onetime: {!r}".format(onetime))
+    logging.info("Is Live: {!r}".format(live_dataset))
+
     while True:
         #raise httplib.IncompleteRead('hi') # for testing
         #print "getting", next_cursor
 
         # get the identifiers of followers - one page worth (up to 5000 people)
+        logging.info("next_cursor: {!r}".format(next_cursor))
         if next_cursor == -1:
             result = tw.followers.ids(screen_name=screen_name)
         else:
             result = tw.followers.ids(screen_name=screen_name, cursor=next_cursor)
         ids = result['ids']
+        logging.info("processing ids {!r}".format(ids))
 
         # and then the user details for all the ids
         double_break = False
@@ -292,6 +317,7 @@ def main_function():
                 break
         if double_break:
             break
+        logging.info("... ok")
 
         # we have all the info for one page - record got and save it
         pages_got += 1
@@ -301,17 +327,20 @@ def main_function():
         # break
 
         if next_cursor == 0:
+            logging.warn("Excellent! We've finished a batch!")
             # We've finished a batch
             next_cursor = -1
             current_batch += 1
 
             if not live_dataset:
                 # Disable cron job, we're done
+                logging.warn("All done: disabling cronjob")
                 os.system("crontab -r >/dev/null 2>&1")
                 set_status_and_exit("ok-done", 'ok', "Finished")
             break
 
     # Save progress message
+    logging.info("We'll come back later. Bye for now.")
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
 
 try:
