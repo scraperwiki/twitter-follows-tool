@@ -164,12 +164,6 @@ def save_status():
     }
     scraperwiki.sql.save(['id'], data, table_name='__status')
 
-# Load in all our progress variables
-current_batch = 1
-next_cursor = -1
-batch_got = 0
-batch_expected = 0
-current_status = 'clean-slate'
 def get_status():
     global current_batch, next_cursor, batch_got, batch_expected, current_status
 
@@ -197,8 +191,15 @@ def chunks(l, n):
 #########################################################################
 # Main code
 
-pages_got = 0
-try:
+def main_function():
+    # Load in all our progress variables
+    current_batch = 1
+    next_cursor = -1
+    batch_got = 0
+    batch_expected = 0
+    current_status = 'clean-slate'
+
+    pages_got = 0
     # Rename old status table to new __status name.
     # This can be removed after it has been active long enough to
     # update all existing tools.
@@ -310,6 +311,11 @@ try:
                 set_status_and_exit("ok-done", 'ok', "Finished")
             break
 
+    # Save progress message
+    set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
+
+try:
+    main_function()
 except twitter.api.TwitterHTTPError, e:
     if "Twitter sent status 401 for URL" in str(e):
         clear_auth_and_restart()
@@ -335,11 +341,3 @@ except httplib.IncompleteRead, e:
     # I think this is effectively a rate limit error - so only count if it was first error
     if pages_got == 0:
         set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
-
-# Save progress message
-set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
-
-
-
-
-
