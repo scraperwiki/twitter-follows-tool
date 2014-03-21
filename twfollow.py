@@ -21,6 +21,9 @@ from secrets import *
 MAX_TO_GET=100000
 logging.basicConfig(level=logging.INFO)
 
+class FollowerLimitError(Exception):
+    pass
+
 # Horrendous hack to work around some Twitter / Python incompatibility
 # http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
 def patch_http_response_read(func):
@@ -205,6 +208,59 @@ def move_legacy_table():
         logging.warn("Legacy status table detected.")
         scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
 
+def shutdown_if_static_dataset():
+    live_dataset = 'LIVE_DATASET' in os.environ
+    if not live_dataset:
+	# Disable cron job, we're done
+	logging.warn("All done: disabling cronjob")
+	os.system("crontab -r >/dev/null 2>&1")
+	set_status_and_exit("ok-done", 'ok', "Finished")
+
+
+def fetch_and_save_users(ids, table, current_batch):
+    global tw
+    logging.info("processing ids {!r}".format(ids))
+    for chunk in chunks(ids, 100):
+	users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
+	data = []
+	for user in users:
+	    datum = convert_user(current_batch, user)
+	    data.append(datum)
+	scraperwiki.sql.save(['id'], data, table_name=table)
+	# "twitter_followers"
+	save_status()
+	logging.info("... ok")
+
+	# Don't allow more than a certain number
+	if batch_got >= MAX_TO_GET:
+	    raise FollowerLimitError
+
+	# If being run from the user interface, return quickly after being
+	# sure we've got *something* (the Javascript will then spawn us
+	# again in the background to slowly get the rest)
+        onetime = 'ONETIME' in os.environ
+	if onetime:
+	    return
+
+def install_crontab():
+    if not os.path.isfile("crontab"):
+        logging.warn("Crontab not detected. Installing...")
+        crontab = open("tool/crontab.template").read()
+        # ... run at a random minute to distribute load XXX platform should do this for us
+        crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
+        open("crontab", "w").write(crontab)
+    else:
+        logging.info("Crontab present. Activating...")
+    os.system("crontab crontab")
+
+def clean_slate():
+    logging.warn("Cleaning slate")
+    scraperwiki.sql.execute("drop table if exists twitter_followers")
+    scraperwiki.sql.execute("drop table if exists __status")
+    os.system("crontab -r >/dev/null 2>&1")
+    set_status_and_exit('clean-slate', 'error', 'No user set')
+    sys.exit()
+
 #########################################################################
 # Main code
 
@@ -228,12 +284,7 @@ def main_function():
     #   b. callback_url oauth_verifier: have just come back from Twitter with these oauth tokens
     #   c. "clean-slate": wipe database and start again
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
-        logging.warn("Cleaning slate")
-        scraperwiki.sql.execute("drop table if exists twitter_followers")
-        scraperwiki.sql.execute("drop table if exists __status")
-        os.system("crontab -r >/dev/null 2>&1")
-        set_status_and_exit('clean-slate', 'error', 'No user set')
-        sys.exit()
+        clean_slate()
 
     # Make the followers table *first* with dumb data, calling DumpTruck directly,
     # so it appears before the status one in the list
@@ -264,21 +315,9 @@ def main_function():
     logging.info("Batch expected: {!r}".format(batch_expected))
 
     # Things basically working, so make sure we run again by writing a crontab.
-    if not os.path.isfile("crontab"):
-        logging.warn("Crontab not detected. Installing...")
-        crontab = open("tool/crontab.template").read()
-        # ... run at a random minute to distribute load XXX platform should do this for us
-        crontab = crontab.replace("RANDOM", str(random.randint(0, 59)))
-        open("crontab", "w").write(crontab)
-    else:
-        logging.info("Crontab present.")
-    os.system("crontab crontab")
+    install_crontab()
 
     # Get as many pages in the batch as we can (most likely 15!)
-    onetime = 'ONETIME' in os.environ
-    live_dataset = 'LIVE_DATASET' in os.environ
-    logging.info("Is onetime: {!r}".format(onetime))
-    logging.info("Is Live: {!r}".format(live_dataset))
 
     while True:
         #raise httplib.IncompleteRead('hi') # for testing
@@ -291,33 +330,10 @@ def main_function():
         else:
             result = tw.followers.ids(screen_name=screen_name, cursor=next_cursor)
         ids = result['ids']
-        logging.info("processing ids {!r}".format(ids))
 
         # and then the user details for all the ids
-        double_break = False
-        for chunk in chunks(ids, 100):
-            users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
-            data = []
-            for user in users:
-                datum = convert_user(current_batch, user)
-                data.append(datum)
-            scraperwiki.sql.save(['id'], data, table_name="twitter_followers")
-            save_status()
-
-            # Don't allow more than a certain number
-            if batch_got >= MAX_TO_GET:
-                os.system("crontab -r >/dev/null 2>&1")
-                set_status_and_exit("ok-limit", 'ok', "Reached %d follower limit" % MAX_TO_GET)
-
-            # If being run from the user interface, return quickly after being
-            # sure we've got *something* (the Javascript will then spawn us
-            # again in the background to slowly get the rest)
-            if onetime:
-                double_break = True
-                break
-        if double_break:
-            break
-        logging.info("... ok")
+        fetch_and_save_users(ids, 'twitter_followers', current_batch)
+        # TODO: don't pass current_batch like this
 
         # we have all the info for one page - record got and save it
         pages_got += 1
@@ -331,19 +347,22 @@ def main_function():
             # We've finished a batch
             next_cursor = -1
             current_batch += 1
-
-            if not live_dataset:
-                # Disable cron job, we're done
-                logging.warn("All done: disabling cronjob")
-                os.system("crontab -r >/dev/null 2>&1")
-                set_status_and_exit("ok-done", 'ok', "Finished")
+            # TODO: save current status, maybe?
+            shutdown_if_static_dataset()
             break
 
     # Save progress message
     logging.info("We'll come back later. Bye for now.")
+    # TODO: save current status
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
 
 try:
+    current_batch = 1  # ick globals, TODO
+    next_cursor = -1
+    batch_got = 0
+    batch_expected = 0
+    current_status = 'clean-slate'
+    tw = do_tool_oauth()
     main_function()
 except twitter.api.TwitterHTTPError, e:
     if "Twitter sent status 401 for URL" in str(e):
@@ -370,3 +389,6 @@ except httplib.IncompleteRead, e:
     # I think this is effectively a rate limit error - so only count if it was first error
     if pages_got == 0:
         set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
+except FollowerLimitError, e:
+    os.system("crontab -r >/dev/null 2>&1")
+    set_status_and_exit("ok-limit", 'ok', "Reached %d follower limit" % MAX_TO_GET)
