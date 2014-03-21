@@ -137,58 +137,12 @@ def set_status_and_exit(status, typ, message, extra = {}):
     scraperwiki.status(typ, message)
 
     current_status = status
-    save_status()
+    # TODO save global status message.
 
     sys.exit()
 
 
-# Store all our progress variables
-def save_status():
-    global current_batch, next_cursor, batch_got, batch_expected, current_status
 
-    # Update progress indicators...
-
-    # For number of users got, we count the total of:
-    # 1) all followers in the last full batch
-    # 2) all followers transferred into the new batch so far
-    # i.e. all those for whom batch >= (current_batch - 1)
-    try:
-        batch_got = scraperwiki.sql.select("count(*) as c from twitter_followers where batch >= %d" % (current_batch - 1))[0]['c']
-    except:
-        batch_got = 0
-
-    data = {
-        'id': 'followers',
-        'current_batch': current_batch,
-        'next_cursor': next_cursor,
-        'batch_got': batch_got,
-        'batch_expected': batch_expected,
-        'current_status': current_status,
-        'when': datetime.datetime.now().isoformat()
-
-    }
-    scraperwiki.sql.save(['id'], data, table_name='__status')
-
-def get_status():
-    global current_batch, next_cursor, batch_got, batch_expected, current_status
-
-    try:
-        data = scraperwiki.sql.select("* from __status where id='followers'")
-    except sqlite3.OperationalError, e:
-        if str(e) == "no such table: __status":
-            return
-        raise
-    if len(data) == 0:
-        return
-    assert(len(data) == 1)
-    data = data[0]
-
-    current_batch = data['current_batch']
-    next_cursor = data['next_cursor']
-    batch_got = data['batch_got']
-    batch_expected = data['batch_expected']
-    current_status = data['current_status']
-    return data
 
 # http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
 def chunks(l, n):
@@ -217,31 +171,6 @@ def shutdown_if_static_dataset():
 	set_status_and_exit("ok-done", 'ok', "Finished")
 
 
-def fetch_and_save_users(ids, table, current_batch):
-    global tw
-    logging.info("processing ids {!r}".format(ids))
-    for chunk in chunks(ids, 100):
-	users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
-	data = []
-	for user in users:
-	    datum = convert_user(current_batch, user)
-	    data.append(datum)
-	scraperwiki.sql.save(['id'], data, table_name=table)
-	# "twitter_followers"
-	save_status()
-	logging.info("... ok")
-
-	# Don't allow more than a certain number
-	if batch_got >= MAX_TO_GET:
-	    raise FollowerLimitError
-
-	# If being run from the user interface, return quickly after being
-	# sure we've got *something* (the Javascript will then spawn us
-	# again in the background to slowly get the rest)
-        onetime = 'ONETIME' in os.environ
-	if onetime:
-	    return
-
 def install_crontab():
     if not os.path.isfile("crontab"):
         logging.warn("Crontab not detected. Installing...")
@@ -256,24 +185,152 @@ def install_crontab():
 def clean_slate():
     logging.warn("Cleaning slate")
     scraperwiki.sql.execute("drop table if exists twitter_followers")
+    scraperwiki.sql.execute("drop table if exists twitter_following")
     scraperwiki.sql.execute("drop table if exists __status")
     os.system("crontab -r >/dev/null 2>&1")
     set_status_and_exit('clean-slate', 'error', 'No user set')
     sys.exit()
 
+class TwitterPeople(object):
+    def __init__(self, table, screen_name):
+        self.table=table
+        if self.table == 'followers': self.function = tw.followers
+        if self.table == 'following': self.function = tw.friends
+        assert self.function
+        self.full_table = 'twitter_'+table
+        self.screen_name = screen_name
+        self.make_table()
+        self.get_status()
+        self.pages_got = 0
+
+    def make_table(self):
+	# Make the followers table *first* with dumb data, calling DumpTruck directly,
+	# so it appears before the status one in the list
+	scraperwiki.sql.dt.create_table({'id': 1, 'batch': 1}, self.full_table)
+	scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
+				"ON "+self.full_table+" (batch)")
+ 
+    def get_more_ids(self):
+        # get the identifiers of followers - one page worth (up to 5000 people)
+        logging.info("next_cursor: {!r}".format(self.next_cursor))
+        if self.next_cursor == -1:
+            result = self.function.ids(screen_name=self.screen_name)
+        else:
+            result = self.function.ids(screen_name=self.screen_name,
+                                       cursor=self.next_cursor)
+        ids = result['ids']
+        next_cursor = result['next_cursor']
+        return ids, next_cursor
+
+    def crawl_once(self):
+        # get the identifiers of followers - one page worth (up to 5000 people)
+        ids, next_cursor = self.get_more_ids()
+        # and then the user details for all the ids
+        self.fetch_and_save_users(ids)
+        # and now we faff about deciding if we do the timewarp again.
+        # TODO TODO TODO TODO TODO I've faffed this up somehow.
+        # we have all the info for one page - record got and save it
+        self.pages_got += 1
+        self.next_cursor = next_cursor
+
+        # While debugging, only do one page to avoid rate limits by uncommenting this:
+        # break
+
+        if self.next_cursor == 0:
+            logging.warn("Excellent! We've finished a batch!")
+            # We've finished a batch
+            self.next_cursor = -1
+            self.current_batch += 1
+            self.save_status()
+            # TODO: save current status, maybe?
+            shutdown_if_static_dataset()  # TODO remove
+        return self.pages_got
+
+    def fetch_and_save_users(self, ids):
+	global tw
+	logging.info("processing ids {!r}".format(ids))
+	for chunk in chunks(ids, 100):
+	    users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
+	    data = []
+	    for user in users:
+		datum = convert_user(self.current_batch, user)
+		data.append(datum)
+	    scraperwiki.sql.save(['id'], data, table_name=self.table)
+	    # "twitter_followers"
+	    self.save_status()
+	    logging.info("... ok")
+
+	    # Don't allow more than a certain number
+	    if self.batch_got >= MAX_TO_GET:
+		raise FollowerLimitError
+
+	    # If being run from the user interface, return quickly after being
+	    # sure we've got *something* (the Javascript will then spawn us
+	    # again in the background to slowly get the rest)
+	    onetime = 'ONETIME' in os.environ
+	    if onetime:
+		return
+
+
+    # Store all our progress variables
+    def save_status(self):
+	# Update progress indicators...
+
+	# For number of users got, we count the total of:
+	# 1) all followers in the last full batch
+	# 2) all followers transferred into the new batch so far
+	# i.e. all those for whom batch >= (current_batch - 1)
+	try:
+	    self.batch_got = scraperwiki.sql.select("count(*) as c from twitter_%s where batch >= %d" % (self.table, self.current_batch - 1))[0]['c']
+	except:
+	    self.batch_got = 0
+
+	data = {
+	    'id': self.table,
+	    'current_batch': self.current_batch,
+	    'next_cursor': self.next_cursor,
+	    'batch_got': self.batch_got,
+	    'batch_expected': self.batch_expected,
+	    'current_status': "NOT USED HERE",
+	    'when': datetime.datetime.now().isoformat()
+
+	}
+	scraperwiki.sql.save(['id'], data, table_name='__status')
+
+
+    def get_status(self):
+	try:
+	    data = scraperwiki.sql.select("* from __status where id='{}'".format(self.table))
+	except sqlite3.OperationalError, e:
+	    if str(e) == "no such table: __status":
+		self.set_default_status()
+                return
+	    raise
+	if len(data) == 0:
+	    self.set_default_status()
+            return
+	assert(len(data) == 1)
+	data = data[0]
+
+	self.current_batch = data['current_batch']
+	self.next_cursor = data['next_cursor']
+	self.batch_got = data['batch_got']
+	self.batch_expected = data['batch_expected']
+	# self.current_status = data['current_status']
+
+    def set_default_status(self):
+        logging.warn("Using default status for {}!".format(self.table))
+        self.current_batch = 1
+        self.next_cursor = -1
+        self.batch_got = 0
+        self.batch_expected = 0
+        #current_status = 'clean-slate'
 #########################################################################
 # Main code
 
 def main_function():
     logging.info("main_function()")
-    # Load in all our progress variables
-    current_batch = 1
-    next_cursor = -1
-    batch_got = 0
-    batch_expected = 0
-    current_status = 'clean-slate'
 
-    pages_got = 0
     # Rename old status table to new __status name.
     # This can be removed after it has been active long enough to
     # update all existing tools.
@@ -286,24 +343,15 @@ def main_function():
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
         clean_slate()
 
-    # Make the followers table *first* with dumb data, calling DumpTruck directly,
-    # so it appears before the status one in the list
-    scraperwiki.sql.dt.create_table({'id': 1, 'batch': 1}, 'twitter_followers')
-
-    scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
-                            "ON twitter_followers (batch)")
+    screen_name = open("user.txt").read().strip()
+    followers = TwitterPeople("followers", screen_name)
+    following = TwitterPeople("following", screen_name)    
 
     # Get user we're working on from file we store it in
-    screen_name = open("user.txt").read().strip()
 
-    # Connect to Twitter
-    tw = do_tool_oauth()
-    logging.info("Authenticated")
     # A batch is one scan through the list of followers - we have to scan as
     # our API calls are limited.  The cursor is Twitter's identifier of where
     # in the current batch we are.
-    status_info = get_status()
-    logging.info("Loaded status: {!r}".format(status_info))
 
     # Note that each user is only in the most recent batch they've been found in
     # (we don't keep all the history)
@@ -311,7 +359,7 @@ def main_function():
     # Look up latest followers count
     profile = tw.users.lookup(screen_name=screen_name)
     logging.debug("User details: {!r}".format(profile))
-    batch_expected = profile[0]['followers_count']
+    batch_expected = profile[0]['followers_count']  # TODO
     logging.info("Batch expected: {!r}".format(batch_expected))
 
     # Things basically working, so make sure we run again by writing a crontab.
@@ -319,37 +367,9 @@ def main_function():
 
     # Get as many pages in the batch as we can (most likely 15!)
 
-    while True:
-        #raise httplib.IncompleteRead('hi') # for testing
-        #print "getting", next_cursor
-
-        # get the identifiers of followers - one page worth (up to 5000 people)
-        logging.info("next_cursor: {!r}".format(next_cursor))
-        if next_cursor == -1:
-            result = tw.followers.ids(screen_name=screen_name)
-        else:
-            result = tw.followers.ids(screen_name=screen_name, cursor=next_cursor)
-        ids = result['ids']
-
-        # and then the user details for all the ids
-        fetch_and_save_users(ids, 'twitter_followers', current_batch)
-        # TODO: don't pass current_batch like this
-
-        # we have all the info for one page - record got and save it
-        pages_got += 1
-        next_cursor = result['next_cursor']
-
-        # While debugging, only do one page to avoid rate limits by uncommenting this:
-        # break
-
-        if next_cursor == 0:
-            logging.warn("Excellent! We've finished a batch!")
-            # We've finished a batch
-            next_cursor = -1
-            current_batch += 1
-            # TODO: save current status, maybe?
-            shutdown_if_static_dataset()
-            break
+    # pages_got = followers.crawl_once()
+    pages_got = following.crawl_once()
+    # TODO logic missing here
 
     # Save progress message
     logging.info("We'll come back later. Bye for now.")
@@ -357,11 +377,6 @@ def main_function():
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
 
 try:
-    current_batch = 1  # ick globals, TODO
-    next_cursor = -1
-    batch_got = 0
-    batch_expected = 0
-    current_status = 'clean-slate'
     tw = do_tool_oauth()
     main_function()
 except twitter.api.TwitterHTTPError, e:
@@ -391,4 +406,4 @@ except httplib.IncompleteRead, e:
         set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
 except FollowerLimitError, e:
     os.system("crontab -r >/dev/null 2>&1")
-    set_status_and_exit("ok-limit", 'ok', "Reached %d follower limit" % MAX_TO_GET)
+    set_status_and_exit("ok-limit", 'ok', "Reached %d person limit" % MAX_TO_GET)
