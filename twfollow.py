@@ -19,7 +19,10 @@ import logging
 from secrets import *
 
 MAX_TO_GET=100000
-logging.basicConfig(level=logging.INFO)
+if len(sys.argv) > 1: 
+    logging.basicConfig(level=logging.INFO)
+else:
+    logging.basicConfig(level=logging.CRITICAL)
 
 class FollowerLimitError(Exception):
     pass
@@ -253,8 +256,9 @@ class TwitterPeople(object):
 
     def fetch_and_save_users(self, ids):
 	global tw
-	logging.info("processing ids {!r}".format(ids))
+	logging.info("processing ids {!r}".format(ids[:10]))
 	for chunk in chunks(ids, 100):
+            logging.info(chunk[:3])
 	    users = tw.users.lookup(user_id=(",".join(map(str, chunk))))
 	    data = []
 	    for user in users:
@@ -376,7 +380,7 @@ def main_function():
 
     # pages_got = followers.crawl_once()
     following.crawl_until_done()
-    followers.crawl_once()
+    followers.crawl_until_done()
 
     # We're done here.
 
@@ -396,6 +400,7 @@ except twitter.api.TwitterHTTPError, e:
     # https://dev.twitter.com/docs/error-codes-responses
     obj = json.loads(e.response_data)
     code = obj['errors'][0]['code']
+    logging.warn("Twitter Error {!r}".format(code))
     # authentication failure
     if (code in [32, 89]):
         clear_auth_and_restart()
@@ -405,15 +410,16 @@ except twitter.api.TwitterHTTPError, e:
     # rate limit exceeded
     if code == 88:
         # provided we got at least one page, rate limit isn't an error but expected
-        if pages_got == 0:
-            set_status_and_exit('rate-limit', 'error', 'Twitter is rate limiting you')
+        set_status_and_exit('rate-limit', 'error', 'Twitter is rate limiting you')
     else:
         # anything else is an unexpected error - if ones occur a lot, add the above instead
         raise
 except httplib.IncompleteRead, e:
+    logging.warn("Incomplete Read")
     # I think this is effectively a rate limit error - so only count if it was first error
     if pages_got == 0:
         set_status_and_exit('rate-limit', 'error', 'Twitter broke the connection')
 except FollowerLimitError, e:
+    logging.warn("Follower Limit reached")
     os.system("crontab -r >/dev/null 2>&1")
     set_status_and_exit("ok-limit", 'ok', "Reached %d person limit" % MAX_TO_GET)
