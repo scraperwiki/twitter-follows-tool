@@ -19,7 +19,7 @@ import logging
 from secrets import *
 
 MAX_TO_GET=100000
-if len(sys.argv) > 1: 
+if len(sys.argv) > 1 and sys.argv[1] == 'log': 
     logging.basicConfig(level=logging.INFO)
 else:
     logging.basicConfig(level=logging.CRITICAL)
@@ -193,12 +193,12 @@ def clean_slate():
     sys.exit()
 
 class TwitterPeople(object):
-    def __init__(self, table, screen_name):
-        self.table=table
-        if self.table == 'followers': self.function = tw.followers
-        if self.table == 'following': self.function = tw.friends
+    def __init__(self, table_id, screen_name):
+        self.table_id=table_id
+        if self.table_id == 'followers': self.function = tw.followers
+        if self.table_id == 'following': self.function = tw.friends
         assert self.function
-        self.full_table = 'twitter_'+table
+        self.full_table = 'twitter_'+table_id
         self.screen_name = screen_name
         self.make_table()
         self.get_status()
@@ -264,7 +264,7 @@ class TwitterPeople(object):
 	    for user in users:
 		datum = convert_user(self.current_batch, user)
 		data.append(datum)
-	    scraperwiki.sql.save(['id'], data, table_name=self.table)
+	    scraperwiki.sql.save(['id'], data, table_name=self.full_table)
 	    # "twitter_followers"
 	    self.save_status()
 	    logging.info("... ok")
@@ -290,12 +290,12 @@ class TwitterPeople(object):
 	# 2) all followers transferred into the new batch so far
 	# i.e. all those for whom batch >= (current_batch - 1)
 	try:
-	    self.batch_got = scraperwiki.sql.select("count(*) as c from twitter_%s where batch >= %d" % (self.table, self.current_batch - 1))[0]['c']
-	except:
+	    self.batch_got = scraperwiki.sql.select("count(*) as c from %s where batch >= %d" % (self.full_table, self.current_batch - 1))[0]['c']
+	except Exception, e:
 	    self.batch_got = 0
 
 	data = {
-	    'id': self.table,
+	    'id': self.table_id,
 	    'current_batch': self.current_batch,
 	    'next_cursor': self.next_cursor,
 	    'batch_got': self.batch_got,
@@ -309,7 +309,7 @@ class TwitterPeople(object):
 
     def get_status(self):
 	try:
-	    data = scraperwiki.sql.select("* from __status where id='{}'".format(self.table))
+	    data = scraperwiki.sql.select("* from __status where id='{}'".format(self.table_id))
 	except sqlite3.OperationalError, e:
 	    if str(e) == "no such table: __status":
 		self.set_default_status()
@@ -329,7 +329,7 @@ class TwitterPeople(object):
 	self.batch_status = data['current_status']
 
     def set_default_status(self):
-        logging.warn("Using default status for {}!".format(self.table))
+        logging.warn("Using default status for {}!".format(self.table_id))
         self.current_batch = 1
         self.next_cursor = -1
         self.batch_got = 0
@@ -390,8 +390,26 @@ def main_function():
     # TODO: save current status
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
 
+def output_example_data():
+    with open("ids.json", "w") as f:
+        response = tw.followers.ids(screen_name='dragondave',
+                                    cursor=-1)
+        f.write(json.dumps(response))
+    with open("lookup_1.json", "w") as f:
+        response = tw.users.lookup(screen_name='dragondave')
+        f.write(json.dumps(response))
+    ids = [2151045530, 14284208, 537386838, 72015710]
+    with open("lookup_many.json", "w") as f:
+        response = tw.users.lookup(user_id=(",".join(map(str, ids))))
+        f.write(json.dumps(response))
+    logging.critical("Example data provided. Exiting.")
+    exit()
+
+
+
 try:
     tw = do_tool_oauth()
+    output_example_data()
     main_function()
 except twitter.api.TwitterHTTPError, e:
     if "Twitter sent status 401 for URL" in str(e):
