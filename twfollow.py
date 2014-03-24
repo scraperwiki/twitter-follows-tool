@@ -136,7 +136,7 @@ def set_status_and_exit(status, typ, message, extra = {}):
     extra['status'] = status
     print json.dumps(extra)
     scraperwiki.status(typ, message)
-    scraperwiki.sql.save(data={"status": status, "id": "global"},
+    scraperwiki.sql.save(data={"current_status": status, "id": "global"},
                          table_name= '__status',
                          unique_keys = ['id'])
 
@@ -226,6 +226,7 @@ class TwitterPeople(object):
     def crawl_once(self):
         """One page of followers. Return True if more to do."""
         # get the identifiers of followers - one page worth (up to 5000 people)
+        logging.info("Crawling...")
         ids, next_cursor = self.get_more_ids()
         # and then the user details for all the ids
         self.fetch_and_save_users(ids)
@@ -409,7 +410,7 @@ def output_example_data():
 
 try:
     tw = do_tool_oauth()
-    output_example_data()
+    # output_example_data()
     main_function()
 except twitter.api.TwitterHTTPError, e:
     if "Twitter sent status 401 for URL" in str(e):

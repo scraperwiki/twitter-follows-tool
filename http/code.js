@@ -125,7 +125,7 @@ var show_hide_stuff = function(done, rename) {
         }
 
         // Show right form
-        scraperwiki.sql('select * from __status where id = "followers"', function(results){
+        scraperwiki.sql('select * from __status where id = "global"', function(results){
             results = results[0]
 
             // results['batch_expected'] += 1; // debugging, force a state
@@ -135,6 +135,8 @@ var show_hide_stuff = function(done, rename) {
             $('.settings').hide()
             fix_button_texts()
        
+            /*
+            // TODO TODO TODO
             $('.batch_got').text(results['batch_got'])
             $('.batch_expected').text(results['batch_expected'])
             $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
@@ -153,6 +155,9 @@ var show_hide_stuff = function(done, rename) {
             } else {
                 eta = days_left + " days"
             }
+            // TODO TODO TODO
+            */
+            eta = '[eta disabled]'
             $('#eta').text(eta)
 
             $('pre,.alert,.help-inline').remove()
