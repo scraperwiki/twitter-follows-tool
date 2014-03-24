@@ -129,15 +129,13 @@ def clear_auth_and_restart():
 
 # Signal back to the calling Javascript, to the database, and custard's status API, our status
 def set_status_and_exit(status, typ, message, extra = {}):
-    global current_status
-
+    logging.info("Exiting with status {!r}:{!r}".format(status, message))
     extra['status'] = status
     print json.dumps(extra)
-
     scraperwiki.status(typ, message)
-
-    current_status = status
-    # TODO save global status message.
+    scraperwiki.sql.save(data={"status": status, "id": "global"},
+                         table_name= '__status',
+                         unique_keys = ['id'])
 
     sys.exit()
 
@@ -223,6 +221,7 @@ class TwitterPeople(object):
         return ids, next_cursor
 
     def crawl_once(self):
+        """One page of followers. Return True if more to do."""
         # get the identifiers of followers - one page worth (up to 5000 people)
         ids, next_cursor = self.get_more_ids()
         # and then the user details for all the ids
@@ -241,10 +240,16 @@ class TwitterPeople(object):
             # We've finished a batch
             self.next_cursor = -1
             self.current_batch += 1
-            self.save_status()
-            # TODO: save current status, maybe?
-            shutdown_if_static_dataset()  # TODO remove
-        return self.pages_got
+            self.save_status("batch-complete")
+            return False
+        return True
+
+    def crawl_until_done(self):
+        if self.batch_status != "batch-complete":
+            while self.crawl_once():
+                pass
+        return False  # batch is complete
+        
 
     def fetch_and_save_users(self, ids):
 	global tw
@@ -273,7 +278,7 @@ class TwitterPeople(object):
 
 
     # Store all our progress variables
-    def save_status(self):
+    def save_status(self, status="indeterminate"):
 	# Update progress indicators...
 
 	# For number of users got, we count the total of:
@@ -291,7 +296,7 @@ class TwitterPeople(object):
 	    'next_cursor': self.next_cursor,
 	    'batch_got': self.batch_got,
 	    'batch_expected': self.batch_expected,
-	    'current_status': "NOT USED HERE",
+	    'current_status': status,
 	    'when': datetime.datetime.now().isoformat()
 
 	}
@@ -311,12 +316,13 @@ class TwitterPeople(object):
             return
 	assert(len(data) == 1)
 	data = data[0]
+        # global_status = scraperwiki.sql.select("current_status from __status where id='global'")[0]
 
 	self.current_batch = data['current_batch']
 	self.next_cursor = data['next_cursor']
 	self.batch_got = data['batch_got']
 	self.batch_expected = data['batch_expected']
-	# self.current_status = data['current_status']
+	self.batch_status = data['current_status']
 
     def set_default_status(self):
         logging.warn("Using default status for {}!".format(self.table))
@@ -324,7 +330,7 @@ class TwitterPeople(object):
         self.next_cursor = -1
         self.batch_got = 0
         self.batch_expected = 0
-        #current_status = 'clean-slate'
+        self.batch_status = 'default'
 #########################################################################
 # Main code
 
@@ -359,8 +365,9 @@ def main_function():
     # Look up latest followers count
     profile = tw.users.lookup(screen_name=screen_name)
     logging.debug("User details: {!r}".format(profile))
-    batch_expected = profile[0]['followers_count']  # TODO
-    logging.info("Batch expected: {!r}".format(batch_expected))
+    followers.batch_expected = profile[0]['followers_count'] 
+    following.batch_expected = profile[0]['friends_count'] 
+    logging.info("Batches expected: {!r}, {!r}".format(followers.batch_expected, following.batch_expected))
 
     # Things basically working, so make sure we run again by writing a crontab.
     install_crontab()
@@ -368,13 +375,16 @@ def main_function():
     # Get as many pages in the batch as we can (most likely 15!)
 
     # pages_got = followers.crawl_once()
-    pages_got = following.crawl_once()
-    # TODO logic missing here
+    following.crawl_until_done()
+    followers.crawl_once()
 
+    # We're done here.
+
+    shutdown_if_static_dataset() 
     # Save progress message
     logging.info("We'll come back later. Bye for now.")
     # TODO: save current status
-    set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (batch_got, batch_expected))
+    set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
 
 try:
     tw = do_tool_oauth()
