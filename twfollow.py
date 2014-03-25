@@ -166,14 +166,13 @@ def move_legacy_table():
         logging.warn("Legacy status table detected.")
         scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
 
-def shutdown_if_static_dataset():
-    return  # TODO disabled since doesn't seem relevant!
-    live_dataset = 'LIVE_DATASET' in os.environ
-    if not live_dataset:
+def shutdown(): # _if_static_dataset():
+    #live_dataset = 'LIVE_DATASET' in os.environ
+    #if not live_dataset:
 	# Disable cron job, we're done
-	logging.warn("All done: disabling cronjob")
-	os.system("crontab -r >/dev/null 2>&1")
-	set_status_and_exit("ok-done", 'ok', "Finished")
+    logging.warn("All done: disabling cronjob")
+    os.system("crontab -r >/dev/null 2>&1")
+    set_status_and_exit("ok-done", 'ok', "Finished")
 
 
 def install_crontab():
@@ -382,23 +381,27 @@ def main_function():
     # Get as many pages in the batch as we can (most likely 15!)
 
     # pages_got = followers.crawl_once()
+    stopped_early = False
     try:
         following.crawl_until_done()
     except QuickRun:
+        stopped_early = True
         pass
 
     try:
         followers.crawl_until_done()
     except QuickRun:
+        stopped_early = True
         pass
 
-    # We're done here.
+    if stopped_early:
+        set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
 
-    shutdown_if_static_dataset() 
-    # Save progress message
-    logging.info("We'll come back later. Bye for now.")
-    # TODO: save current status
-    set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
+    # We're done here.
+    shutdown() #_if_static_dataset()
+     
+
+
 
 def output_example_data():
     with open("ids.json", "w") as f:
