@@ -145,10 +145,6 @@ var show_hide_stuff = function(done, rename) {
 	    eta = days_left + " days"
 	}
 	$('#eta').text(eta)
-
-
-        }, function(obj, err, exception) {
-           something_went_wrong(err + "! " + exception)
         }
     )
 
