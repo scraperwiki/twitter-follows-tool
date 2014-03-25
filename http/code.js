@@ -124,6 +124,34 @@ var show_hide_stuff = function(done, rename) {
             scraperwiki.dataset.name("Twitter followers of @" + data)
         }
 
+    // Show expected delivery time
+    scraperwiki.sql('select sum(batch_got) as got, sum(batch_expected) as expected from __status', function(results){
+	var got = results[0]['got']
+	var expected = results[0]['expected']
+	$('.batch_got').text(got)
+	$('.batch_expected').text(expected)
+	
+	var tweets_per_request = 5000
+	var request_per_hour = 3 
+	var hours_left = Math.round((expected - got) / request_per_hour / tweets_per_request)
+	var days_left = Math.round(hours_left / 24)
+	if (hours_left <= 1) {
+	    eta = "1 hour"
+	} else if (hours_left < 13) {
+	    eta = hours_left + " hours"
+	} else if (days_left < 2) {
+	    eta = "1 day"
+	} else {
+	    eta = days_left + " days"
+	}
+	$('#eta').text(eta)
+
+
+        }, function(obj, err, exception) {
+           something_went_wrong(err + "! " + exception)
+        }
+    )
+
         // Show right form
         scraperwiki.sql('select * from __status where id = "global"', function(results){
             results = results[0]
@@ -134,31 +162,10 @@ var show_hide_stuff = function(done, rename) {
 
             $('.settings').hide()
             fix_button_texts()
-       
-            /*
-            // TODO TODO TODO
-            $('.batch_got').text(results['batch_got'])
-            $('.batch_expected').text(results['batch_expected'])
-            $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
+            // TODO
+            // $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
 	    // we run @hourly in cron, and until Twitter stops us, which happens with
 	    // users/lookup rate limit (18000 in 15 min window, so three chunks of 5000)
-            var tweets_per_request = 5000
-            var request_per_hour = 3 
-            var hours_left = Math.round((results['batch_expected'] - results['batch_got']) / request_per_hour / tweets_per_request)
-            var days_left = Math.round(hours_left / 24)
-            if (hours_left <= 1) {
-                eta = "1 hour"
-            } else if (hours_left < 13) {
-                eta = hours_left + " hours"
-            } else if (days_left < 2) {
-                eta = "1 day"
-            } else {
-                eta = days_left + " days"
-            }
-            // TODO TODO TODO
-            */
-            eta = '[eta disabled]'
-            $('#eta').text(eta)
 
             $('pre,.alert,.help-inline').remove()
             $('.control-group').removeClass('error')

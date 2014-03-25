@@ -19,12 +19,16 @@ import logging
 from secrets import *
 
 MAX_TO_GET=100000
-if len(sys.argv) > 1 and sys.argv[1] == 'log': 
+if len(sys.argv) > 1 and sys.argv[1] == 'log':  # TODO: this is hacky!
     logging.basicConfig(level=logging.INFO)
 else:
     logging.basicConfig(level=logging.CRITICAL)
 
 class FollowerLimitError(Exception):
+    pass
+
+class QuickRun(Exception):
+    "We just want to show the user something quickly"
     pass
 
 # Horrendous hack to work around some Twitter / Python incompatibility
@@ -188,6 +192,7 @@ def clean_slate():
     scraperwiki.sql.execute("drop table if exists twitter_followers")
     scraperwiki.sql.execute("drop table if exists twitter_following")
     scraperwiki.sql.execute("drop table if exists __status")
+    scraperwiki.sql.execute("create table if not exists __status (batch_got, batch_expected)")
     os.system("crontab -r >/dev/null 2>&1")
     set_status_and_exit('clean-slate', 'error', 'No user set')
     sys.exit()
@@ -227,11 +232,11 @@ class TwitterPeople(object):
         ids, next_cursor = self.get_more_ids()
         # and then the user details for all the ids
         self.fetch_and_save_users(ids)
-        # and now we faff about deciding if we do the timewarp again.
-        # TODO TODO TODO TODO TODO I've faffed this up somehow.
         # we have all the info for one page - record got and save it
         self.pages_got += 1
         self.next_cursor = next_cursor
+        self.save_status()
+        # and now we faff about deciding if we do the timewarp again.
 
         # While debugging, only do one page to avoid rate limits by uncommenting this:
         # break
@@ -276,7 +281,7 @@ class TwitterPeople(object):
 	    # again in the background to slowly get the rest)
 	    onetime = 'ONETIME' in os.environ
 	    if onetime:
-		return
+		raise QuickRun
 
 
     # Store all our progress variables
@@ -377,15 +382,21 @@ def main_function():
     # Get as many pages in the batch as we can (most likely 15!)
 
     # pages_got = followers.crawl_once()
-    following.crawl_until_done()
-    followers.crawl_until_done()
+    try:
+        following.crawl_until_done()
+    except QuickRun:
+        pass
+
+    try:
+        followers.crawl_until_done()
+    except QuickRun:
+        pass
 
     # We're done here.
 
     shutdown_if_static_dataset() 
     # Save progress message
     logging.info("We'll come back later. Bye for now.")
-    # TODO: save current status
     set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
 
 def output_example_data():
