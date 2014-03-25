@@ -214,11 +214,8 @@ class TwitterPeople(object):
     def get_more_ids(self):
         # get the identifiers of followers - one page worth (up to 5000 people)
         logging.info("next_cursor: {!r}".format(self.next_cursor))
-        if self.next_cursor == -1:
-            result = self.function.ids(screen_name=self.screen_name)
-        else:
-            result = self.function.ids(screen_name=self.screen_name,
-                                       cursor=self.next_cursor)
+        result = self.function.ids(screen_name=self.screen_name,
+                                   cursor=self.next_cursor)
         ids = result['ids']
         next_cursor = result['next_cursor']
         return ids, next_cursor
