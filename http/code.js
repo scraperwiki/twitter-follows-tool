@@ -84,7 +84,7 @@ var clear_action = function() {
     $(this).addClass('loading').html('Clearing&hellip;').attr('disabled', true)
     $('pre,.alert,.help-inline').remove()
 
-    scraperwiki.dataset.name("Get Twitter followers")
+    scraperwiki.dataset.name("Get Twitter connections")
 
     scraperwiki.reporting.user({increments: {tf_resets: 1}})
 
@@ -121,7 +121,7 @@ var show_hide_stuff = function(done, rename) {
         $('.who').text(data)
 
         if (rename) {   
-            scraperwiki.dataset.name("Twitter followers of @" + data)
+            scraperwiki.dataset.name("Twitter connections of @" + data)
         }
 
     // Show expected delivery time
@@ -162,8 +162,7 @@ var show_hide_stuff = function(done, rename) {
 
             $('.settings').hide()
             fix_button_texts()
-            // TODO
-            // $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
+            $('.done_when').text(moment(results['when']).format("Do MMM YYYY"))
 	    // we run @hourly in cron, and until Twitter stops us, which happens with
 	    // users/lookup rate limit (18000 in 15 min window, so three chunks of 5000)
 
@@ -176,7 +175,7 @@ var show_hide_stuff = function(done, rename) {
                 // if during auth, click it
                 if (oauth_verifier) {
                     $("#reauthenticate").trigger("click")
-                    scraperwiki.dataset.name("Twitter followers of @" + data)
+                    scraperwiki.dataset.name("Twitter connections of @" + data)
                 }
             } else if (results['current_status'] == 'not-there') {
                 $('#settings-get').show()

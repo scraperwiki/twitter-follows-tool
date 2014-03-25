@@ -139,7 +139,10 @@ def set_status_and_exit(status, typ, message, extra = {}):
     extra['status'] = status
     print json.dumps(extra)
     scraperwiki.status(typ, message)
-    scraperwiki.sql.save(data={"current_status": status, "id": "global"},
+    scraperwiki.sql.save(data={"current_status": status, 
+                               "id": "global",
+	                       'when': datetime.datetime.now().isoformat()
+                              },
                          table_name= '__status',
                          unique_keys = ['id'])
 
@@ -191,6 +194,7 @@ def clean_slate():
     scraperwiki.sql.execute("drop table if exists twitter_followers")
     scraperwiki.sql.execute("drop table if exists twitter_following")
     scraperwiki.sql.execute("drop table if exists __status")
+    scraperwiki.sql.execute("create table __status (batch_got, batch_expected)")
     os.system("crontab -r >/dev/null 2>&1")
     set_status_and_exit('clean-slate', 'error', 'No user set')
     sys.exit()
