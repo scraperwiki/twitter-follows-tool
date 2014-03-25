@@ -1,6 +1,6 @@
 {
-  "displayName": "Get Twitter followers",
-  "description": "Any user's followers",
+  "displayName": "Get Twitter connections",
+  "description": "Who they follow and who follows them",
   "icon": "https://s3-eu-west-1.amazonaws.com/sw-icons/tool-icon-twitter.png",
   "color": "#3cf"
 }
