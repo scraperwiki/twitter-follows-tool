@@ -27,6 +27,9 @@ else:
 class FollowerLimitError(Exception):
     pass
 
+class QuickRun(Exception):
+    pass
+
 # Horrendous hack to work around some Twitter / Python incompatibility
 # http://bobrochel.blogspot.co.nz/2010/11/bad-servers-chunked-encoding-and.html
 def patch_http_response_read(func):
@@ -164,6 +167,7 @@ def move_legacy_table():
         scraperwiki.sql.execute("ALTER TABLE status RENAME TO __status")
 
 def shutdown_if_static_dataset():
+    return  # TODO disabled since doesn't seem relevant!
     live_dataset = 'LIVE_DATASET' in os.environ
     if not live_dataset:
 	# Disable cron job, we're done
@@ -276,7 +280,8 @@ class TwitterPeople(object):
 	    # again in the background to slowly get the rest)
 	    onetime = 'ONETIME' in os.environ
 	    if onetime:
-		return
+                logging.info("We're only processing one page.")
+		raise QuickRun
 
 
     # Store all our progress variables
@@ -377,8 +382,15 @@ def main_function():
     # Get as many pages in the batch as we can (most likely 15!)
 
     # pages_got = followers.crawl_once()
-    following.crawl_until_done()
-    followers.crawl_until_done()
+    try:
+        following.crawl_until_done()
+    except QuickRun:
+        pass
+
+    try:
+        followers.crawl_until_done()
+    except QuickRun:
+        pass
 
     # We're done here.
 
