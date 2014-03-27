@@ -399,7 +399,7 @@ def main_function():
         pass
 
     if stopped_early:
-        set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got, followers.batch_expected))
+        set_status_and_exit("ok-updating", 'ok', "Running... %d/%d" % (followers.batch_got + following.batch_got, following.batch_expected + followers.batch_expected))
 
     # We're done here.
     shutdown() #_if_static_dataset()
