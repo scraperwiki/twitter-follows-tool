@@ -19,7 +19,7 @@ import logging
 from secrets import *
 
 MAX_TO_GET=100000
-if len(sys.argv) > 1 and sys.argv[1] == 'log': 
+if len(sys.argv) > 1 and sys.argv[1] == 'log':
     logging.basicConfig(level=logging.INFO)
 else:
     logging.basicConfig(level=logging.CRITICAL)
@@ -139,7 +139,7 @@ def set_status_and_exit(status, typ, message, extra = {}):
     extra['status'] = status
     print json.dumps(extra)
     scraperwiki.status(typ, message)
-    scraperwiki.sql.save(data={"current_status": status, 
+    scraperwiki.sql.save(data={"current_status": status,
                                "id": "global",
 	                       'when': datetime.datetime.now().isoformat()
                               },
@@ -217,7 +217,7 @@ class TwitterPeople(object):
 	scraperwiki.sql.dt.create_table({'id': 1, 'batch': 1}, self.full_table)
 	scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
 				"ON "+self.full_table+" (batch)")
- 
+
     def get_more_ids(self):
         # get the identifiers of followers - one page worth (up to 5000 people)
         logging.info("next_cursor: {!r}".format(self.next_cursor))
@@ -257,7 +257,7 @@ class TwitterPeople(object):
             while self.crawl_once():
                 pass
         return False  # batch is complete
-        
+
 
     def fetch_and_save_users(self, ids):
 	global tw
@@ -361,7 +361,7 @@ def main_function():
 
     screen_name = open("user.txt").read().strip()
     followers = TwitterPeople("followers", screen_name)
-    following = TwitterPeople("following", screen_name)    
+    following = TwitterPeople("following", screen_name)
 
     # Get user we're working on from file we store it in
 
@@ -375,8 +375,8 @@ def main_function():
     # Look up latest followers count
     profile = tw.users.lookup(screen_name=screen_name)
     logging.debug("User details: {!r}".format(profile))
-    followers.batch_expected = profile[0]['followers_count'] 
-    following.batch_expected = profile[0]['friends_count'] 
+    followers.batch_expected = profile[0]['followers_count']
+    following.batch_expected = profile[0]['friends_count']
     logging.info("Batches expected: {!r}, {!r}".format(followers.batch_expected, following.batch_expected))
 
     # Things basically working, so make sure we run again by writing a crontab.
@@ -403,7 +403,7 @@ def main_function():
 
     # We're done here.
     shutdown() #_if_static_dataset()
-     
+
 
 
 
