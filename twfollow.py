@@ -386,14 +386,15 @@ def main_function():
 
     # pages_got = followers.crawl_once()
     stopped_early = False
+
     try:
-        following.crawl_until_done()
+        followers.crawl_until_done()
     except QuickRun:
         stopped_early = True
         pass
 
     try:
-        followers.crawl_until_done()
+        following.crawl_until_done()
     except QuickRun:
         stopped_early = True
         pass
