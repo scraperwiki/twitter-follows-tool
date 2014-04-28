@@ -1,7 +1,7 @@
 // Show very general purpose error
 var something_went_wrong = function(content) {
     fix_button_texts()
-    $('pre,.alert,.help-inline').remove()
+    $('pre,.alert-error,.alert-warning,.help-inline').remove()
     var p = $('<p>').addClass('alert alert-error').html('<b>Something went wrong!</b> Click here to show technical details.').on('click', function() {
         $(this).next('pre').toggle()
     }).css('cursor', 'pointer')
@@ -47,7 +47,7 @@ var done_exec_main = function(content, rename) {
 // Calls out to the Python script twfollow.py, which does the actual Twitter
 // calling. 
 var scrape_action = function() {
-    $('pre,.alert,.help-inline').remove()
+    $('pre,.alert-error,.alert-warning,.help-inline').remove()
     $('.control-group').removeClass('error')
 
     var q = $('#q').val()
@@ -103,21 +103,17 @@ var diagnostics_action = function() {
         }
         console.log(diagnostics)
         var html = ''
-        if ('mode' in diagnostics) {
-            html += 'Mode is <b>' + diagnostics.mode + '</b>. '
-        }
         if ('status' in diagnostics) {
             html += 'Status <b>' + diagnostics.status + '</b>. '
         }
         if ('user' in diagnostics) {
             html += 'Authenticated user is <b>@' + diagnostics.user + '</b>. '
-            html += 'There are <b>' + diagnostics.followers_remaining + '/' + diagnostics.followers_limit + '</b> followers API calls left, '
-            html += '<b>' + diagnostics.friends_remaining + '/' + diagnostics.friends_limit + '</b> following API calls left, '
-            html += '<b>' + diagnostics.users_remaining + '/' + diagnostics.users_limit + '</b> user details API calls left, '
+            html += 'There are <b>' + diagnostics.followers_remaining + '/' + diagnostics.followers_limit + '</b> followers API calls left '
+            html += 'resetting <b>' + moment.unix(diagnostics.users_reset).fromNow() + "</b>, "
+            html += '<b>' + diagnostics.friends_remaining + '/' + diagnostics.friends_limit + '</b> following API calls left '
+            html += 'resetting <b>' + moment.unix(diagnostics.users_reset).fromNow() + "</b>, "
+            html += '<b>' + diagnostics.users_remaining + '/' + diagnostics.users_limit + '</b> user details API calls left '
             html += 'resetting <b>' + moment.unix(diagnostics.users_reset).fromNow() + "</b>. "
-            if (diagnostics.followers_reset != diagnostics.friends_reset || diagnostics.followers_reset != diagnostics.users_reset) {
-                html += 'UNEXPECTED: Reset periods vary.'
-            }
         }
         if (!('crontab' in diagnostics)) {
             html += 'Not scheduled. '
@@ -137,7 +133,7 @@ var diagnostics_action = function() {
 // Clear data and start again
 var clear_action = function() {
     $(this).addClass('loading').html('Clearing&hellip;').attr('disabled', true)
-    $('pre,.alert,.help-inline').remove()
+    $('pre,.alert-error,.alert-warning,.help-inline').remove()
 
     scraperwiki.dataset.name("Get Twitter friends")
 
@@ -217,7 +213,7 @@ var show_hide_stuff = function(done, rename) {
 	    // we run @hourly in cron, and until Twitter stops us, which happens with
 	    // users/lookup rate limit (18000 in 15 min window, so three chunks of 5000)
 
-            $('pre,.alert,.help-inline').remove()
+            $('pre,.alert-error,.alert-warning,.help-inline').remove()
             $('.control-group').removeClass('error')
 
             if (results['current_status'] == 'auth-redirect') {
