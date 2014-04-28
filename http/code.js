@@ -112,11 +112,12 @@ var diagnostics_action = function() {
         if ('user' in diagnostics) {
             html += 'Authenticated user is <b>@' + diagnostics.user + '</b>. '
             html += 'There are <b>' + diagnostics.followers_remaining + '/' + diagnostics.followers_limit + '</b> followers API calls left, '
-            html += 'resetting <b>' + moment.unix(diagnostics.followers_reset).fromNow() + "</b>. "
-            html += 'There are <b>' + diagnostics.friends_remaining + '/' + diagnostics.friends_limit + '</b> following API calls left, '
-            html += 'resetting <b>' + moment.unix(diagnostics.friends_reset).fromNow() + "</b>. "
-            html += 'There are <b>' + diagnostics.users_remaining + '/' + diagnostics.users_limit + '</b> user details API calls left, '
+            html += '<b>' + diagnostics.friends_remaining + '/' + diagnostics.friends_limit + '</b> following API calls left, '
+            html += '<b>' + diagnostics.users_remaining + '/' + diagnostics.users_limit + '</b> user details API calls left, '
             html += 'resetting <b>' + moment.unix(diagnostics.users_reset).fromNow() + "</b>. "
+            if (diagnostics.followers_reset != diagnostics.friends_reset || diagnostics.followers_reset != diagnostics.users_reset) {
+                html += 'UNEXPECTED: Reset periods vary.'
+            }
         }
         if (!('crontab' in diagnostics)) {
             html += 'Not scheduled. '
