@@ -130,7 +130,7 @@ var diagnostics_action = function() {
         function(obj, err, exception) {
             something_went_wrong(err + "! " + exception)
         }
-    }
+    )
 }
 
 // Clear data and start again
