@@ -79,6 +79,60 @@ var scrape_action = function() {
     )
 }
 
+// Show rate limit and so on
+var diagnostics_action = function() {
+    var $link = $(this)
+    if ($('#diagnostics-area .alert').is(":visible")) {
+        $('#diagnostics-area .alert').slideUp(400)
+        return
+    }
+    $link.next().show()
+
+    // Pass various OAuth bits of data to the Python script that is going to do the work
+    scraperwiki.exec('tool/twfollow.py diagnostics',
+        function (content) {
+            $link.next().hide()
+            var diagnostics
+        try {
+            diagnostics = JSON.parse(content)
+        } catch(e) {
+            console.log("caught!!")
+            // Otherwise an unknown error - e.g. an unexpected stack trace
+            something_went_wrong(content)
+            return
+        }
+        console.log(diagnostics)
+        var html = ''
+        if ('mode' in diagnostics) {
+            html += 'Mode is <b>' + diagnostics.mode + '</b>. '
+        }
+        if ('status' in diagnostics) {
+            html += 'Status <b>' + diagnostics.status + '</b>. '
+        }
+        if ('user' in diagnostics) {
+            html += 'Authenticated user is <b>@' + diagnostics.user + '</b>. '
+            html += 'There are <b>' + diagnostics.followers_remaining + '/' + diagnostics.followers_limit + '</b> followers API calls left, '
+            html += 'resetting <b>' + moment.unix(diagnostics.followers_reset).fromNow() + "</b>. "
+            html += 'There are <b>' + diagnostics.friends_remaining + '/' + diagnostics.friends_limit + '</b> following API calls left, '
+            html += 'resetting <b>' + moment.unix(diagnostics.friends_reset).fromNow() + "</b>. "
+            html += 'There are <b>' + diagnostics.users_remaining + '/' + diagnostics.users_limit + '</b> user details API calls left, '
+            html += 'resetting <b>' + moment.unix(diagnostics.users_reset).fromNow() + "</b>. "
+        }
+        if (!('crontab' in diagnostics)) {
+            html += 'Not scheduled. '
+        } else if (diagnostics.crontab.match(/no crontab/)) {
+            html += 'Not scheduled. '
+        } else {
+            html += 'Scheduled to update at <b>' + parseInt(diagnostics.crontab) + ' minutes</b> past the hour. '
+        }
+        $('#diagnostics-area .alert').html(html).slideDown(400)
+    },
+        function(obj, err, exception) {
+            something_went_wrong(err + "! " + exception)
+        }
+    }
+}
+
 // Clear data and start again
 var clear_action = function() {
     $(this).addClass('loading').html('Clearing&hellip;').attr('disabled', true)
@@ -242,6 +296,7 @@ $(document).ready(function() {
 
     $('#clear-data').on('click', clear_action)
     $('#submit,#reauthenticate').on('click', scrape_action)
+    $('#diagnostics').on('click', diagnostics_action)
 })
 
 

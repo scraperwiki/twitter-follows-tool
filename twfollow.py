@@ -356,14 +356,42 @@ def main_function():
     #   a. None: try and scrape Twitter followers
     #   b. callback_url oauth_verifier: have just come back from Twitter with these oauth tokens
     #   c. "clean-slate": wipe database and start again
+    #   d. "diagnostics": return diagnostics only
     if len(sys.argv) > 1 and sys.argv[1] == 'clean-slate':
         clean_slate()
 
+    # Called for diagnostic information only
+    if len(sys.argv) > 1 and sys.argv[1] == 'diagnostics':
+        diagnostics = {}
+        diagnostics['_rate_limit_status'] = tw.application.rate_limit_status()
+
+        diagnostics['followers_limit'] = diagnostics['_rate_limit_status']['resources']['followers']['/followers/ids']['limit']
+        diagnostics['followers_remaining'] = diagnostics['_rate_limit_status']['resources']['followers']['/followers/ids']['remaining']
+        diagnostics['followers_reset'] = diagnostics['_rate_limit_status']['resources']['followers']['/followers/ids']['reset']
+        diagnostics['friends_limit'] = diagnostics['_rate_limit_status']['resources']['friends']['/friends/ids']['limit']
+        diagnostics['friends_remaining'] = diagnostics['_rate_limit_status']['resources']['friends']['/friends/ids']['remaining']
+        diagnostics['friends_reset'] = diagnostics['_rate_limit_status']['resources']['friends']['/friends/ids']['reset']
+        diagnostics['users_limit'] = diagnostics['_rate_limit_status']['resources']['users']['/users/lookup']['limit']
+        diagnostics['users_remaining'] = diagnostics['_rate_limit_status']['resources']['users']['/users/lookup']['remaining']
+        diagnostics['users_reset'] = diagnostics['_rate_limit_status']['resources']['users']['/users/lookup']['reset']
+
+        diagnostics['_account_settings'] = tw.account.settings()
+        diagnostics['user'] = diagnostics['_account_settings']['screen_name']
+
+        statuses = scraperwiki.sql.select('* from __status')[0]
+        diagnostics['status'] = statuses['current_status']
+
+        crontab = subprocess.check_output("crontab -l | grep twfollow.py; true", stderr=subprocess.STDOUT, shell=True)
+        diagnostics['crontab'] = crontab
+
+        print json.dumps(diagnostics)
+        sys.exit()
+
+
+    # Get user we're working on from file we store it in
     screen_name = open("user.txt").read().strip()
     followers = TwitterPeople("followers", screen_name)
     following = TwitterPeople("following", screen_name)
-
-    # Get user we're working on from file we store it in
 
     # A batch is one scan through the list of followers - we have to scan as
     # our API calls are limited.  The cursor is Twitter's identifier of where

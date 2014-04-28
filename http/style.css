@@ -26,3 +26,29 @@ p.lead strong {
   width: 30%;
   margin: 0 auto 40px auto;
 }
+
+#diagnostics-area {
+  width: 50%;
+  margin: 30px auto 30px auto;
+  text-align: center;
+  font-size: 14px;
+}
+
+#diagnostics-links {
+  margin-bottom: 20px;
+  color: #ccc;
+}
+
+#diagnostics-links a {
+  color: #999;
+  padding: 0 5px;
+}
+
+#diagnostics {
+  cursor: pointer;
+}
+
+#diagnostics-area .alert {
+  width: auto;
+}
+
