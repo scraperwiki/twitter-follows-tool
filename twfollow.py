@@ -114,6 +114,7 @@ def convert_user(batch, user):
     data['followers_count'] = user['followers_count']
     data['following_count'] = user['friends_count'] # rename as "friends" is confusing to end users
     data['statuses_count'] = user['statuses_count']
+    data['verified'] = user['verified']
 
     data['created_at'] = dateutil.parser.parse(user['created_at'])
 
