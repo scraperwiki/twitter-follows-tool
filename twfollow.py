@@ -342,6 +342,8 @@ class TwitterPeople(object):
         self.batch_got = 0
         self.batch_expected = 0
         self.batch_status = 'default'
+
+
 #########################################################################
 # Main code
 
