@@ -52,3 +52,20 @@ p.lead strong {
   width: auto;
 }
 
+#error-too-many {
+  display: none;
+  text-align: center;
+  padding-top: 15px; /* room to breathe */
+  margin: 25px 0 30px 0;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+#error-too-many p {
+  margin-bottom: 10px; /* override #settings p above */
+}
+
+#error-too-many p:first-child {
+  margin-bottom: 7px; /* because Zarino is a perfectionist */
+}
+
