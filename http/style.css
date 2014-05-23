@@ -53,12 +53,13 @@ p.lead strong {
 }
 
 #error-too-many {
-  display: none;
   text-align: center;
   padding-top: 15px; /* room to breathe */
-  margin: 25px 0 30px 0;
+  margin: 25px auto 30px auto;
   font-size: 18px;
   line-height: 24px;
+  width: 600px;
+ 
 }
 
 #error-too-many p {
