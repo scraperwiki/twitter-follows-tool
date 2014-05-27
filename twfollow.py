@@ -18,7 +18,6 @@ import logging
 
 from secrets import *
 
-MAX_TO_GET=100000
 if len(sys.argv) > 1 and sys.argv[1] == 'log':
     logging.basicConfig(level=logging.INFO)
 else:
@@ -96,6 +95,13 @@ def do_tool_oauth():
 
 #########################################################################
 # Helper functions
+
+MAX_TO_GET=100000
+def read_max_to_get():
+    global MAX_TO_GET
+    if os.path.isfile("max_to_get.txt"):
+        MAX_TO_GET = int(open("max_to_get.txt").read().strip())
+read_max_to_get()
 
 # Stores one Twitter user in the ScraperWiki database
 def convert_user(batch, user):

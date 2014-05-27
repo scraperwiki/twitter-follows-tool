@@ -43,6 +43,33 @@ var done_exec_main = function(content, rename) {
     }
 }
 
+// Unlimited followers
+var allow_unlimited_followers = function(cb) {
+   scraperwiki.user.profile(function(details) {
+        var accountLevel = details.effective.accountLevel
+        var allow = true
+        if (accountLevel.match(/free/)) {
+            allow = false
+        }
+        cb(allow)
+   })
+}
+
+// Trigger to get unlimited followers
+var get_them_all = function() {
+   $(this).addClass('loading').html('Getting...').attr('disabled', true)
+   $('pre,.alert-error,.alert-warning,.help-inline').remove()
+
+   scraperwiki.exec("echo 10000000 > max_to_get.txt; ONETIME=1 tool/twfollow.py",
+    function(content) {
+        done_exec_main(content, false)
+    },
+    function(obj, err, exception) {
+        something_went_wrong(err + "! " + exception) 
+    }
+   )
+}
+
 // Event function for when they click on the Go!, Refresh! or Reauthenticate buttons.
 // Calls out to the Python script twfollow.py, which does the actual Twitter
 // calling. 
@@ -242,9 +269,18 @@ var show_hide_stuff = function(done, rename) {
                 $('#settings-clear').show()
                 track_search_if_required()
             } else if (results['current_status'] == 'ok-limit') {
-                $('#settings-limit').show()
-                $('#settings-clear').show()
-                track_search_if_required()
+                allow_unlimited_followers(function(allow) {
+                  if (allow) {
+                    $('#error-too-many').hide()
+                    $('#allow-too-many').show()
+                  } else {
+                    $('#error-too-many').show()
+                    $('#allow-too-many').hide()
+                  }
+                  $('#settings-limit').show()
+                  $('#settings-clear').show()
+                  track_search_if_required()
+                })
             } else if (results['current_status'] == 'clean-slate') {
                 $('#settings-get').show()
             } else {
@@ -294,6 +330,7 @@ $(document).ready(function() {
     $('#clear-data').on('click', clear_action)
     $('#submit,#reauthenticate').on('click', scrape_action)
     $('#diagnostics').on('click', diagnostics_action)
+    $('#get-them-all').on('click', get_them_all)
 })
 
 
