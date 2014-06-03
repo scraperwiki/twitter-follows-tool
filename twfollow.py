@@ -11,9 +11,7 @@ import httplib
 import sqlite3
 import datetime
 import scraperwiki
-import httplib
 import random
-import datetime
 import logging
 
 from secrets import *
