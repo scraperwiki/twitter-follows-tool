@@ -140,6 +140,7 @@ def convert_user(batch, user):
     data['description'] = user['description']
     data['location'] = user['location']
     data['url'] = user['url']
+    data['time_zone'] = user['time_zone']
 
     data['followers_count'] = user['followers_count']
     # rename as "friends" is confusing to end users
