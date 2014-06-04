@@ -130,7 +130,8 @@ read_max_to_get()
 def convert_user(batch, user):
     data = collections.OrderedDict()
 
-    data['id'] = user['id']
+    data['id'] = user['id_str']
+    assert isinstance(data['id'], basestring) 
     data['name'] = user['name']
     data['screen_name'] = user['screen_name']
     data['profile_url'] = "https://twitter.com/" + user['screen_name']
@@ -256,7 +257,7 @@ class TwitterPeople(object):
     def make_table(self):
         # Make the followers table *first* with dumb data, calling DumpTruck
         # directly, so it appears before the status one in the list
-        scraperwiki.sql.dt.create_table({'id': 1, 'batch': 1}, self.full_table)
+        scraperwiki.sql.dt.create_table({'id': 'deleteme', 'batch': 1}, self.full_table)
         scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
                                 "ON "+self.full_table+" (batch)")
 
