@@ -118,6 +118,21 @@ def do_tool_oauth():
 
 MAX_TO_GET = 100000
 
+COLUMNS = collections.OrderedDict([['id', unicode()],
+                                  ['batch', int(0)],
+                                  ['name', unicode()],
+                                  ['screen_name', unicode()],
+                                  ['profile_url', unicode()],
+                                  ['profile_image', unicode()],
+                                  ['description', unicode()],
+                                  ['location', unicode()],
+                                  ['url', unicode()],
+                                  ['time_zone', unicode()],
+                                  ['followers_count', int(0)],
+                                  ['following_count', int(0)],
+                                  ['statuses_count', int(0)],
+                                  ['verified', int(0)],
+                                  ['created_at', datetime.datetime.now()]])
 
 def read_max_to_get():
     global MAX_TO_GET
@@ -131,6 +146,8 @@ def convert_user(batch, user):
     data = collections.OrderedDict()
 
     data['id'] = user['id_str']
+    # this is needed internally to track progress of getting all the followers
+    data['batch'] = batch
     assert isinstance(data['id'], basestring) 
     data['name'] = user['name']
     data['screen_name'] = user['screen_name']
@@ -150,8 +167,6 @@ def convert_user(batch, user):
     data['verified'] = user['verified']
 
     data['created_at'] = dateutil.parser.parse(user['created_at'])
-    # this is needed internally to track progress of getting all the followers
-    data['batch'] = batch
 
     return data
 
@@ -257,7 +272,7 @@ class TwitterPeople(object):
     def make_table(self):
         # Make the followers table *first* with dumb data, calling DumpTruck
         # directly, so it appears before the status one in the list
-        scraperwiki.sql.dt.create_table({'id': 'deleteme', 'batch': 1}, self.full_table)
+        scraperwiki.sql.dt.create_table(COLUMNS, self.full_table)
         scraperwiki.sql.execute("CREATE INDEX IF NOT EXISTS batch_index "
                                 "ON "+self.full_table+" (batch)")
 
