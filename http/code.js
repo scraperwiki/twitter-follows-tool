@@ -95,6 +95,12 @@ var scrape_action = function() {
     // show_hide_stuff will check this variable later and contact intercom.io
     window.trackSearch = true
 
+    // XXX temp
+    fix_button_texts()
+    var p = $('<p>').addClass('alert alert-error').html('<b>Twitter have suspended this tool!</b> We are working hard to get it back. Please <a href="https://blog.scraperwiki.com/2014/07/no-twitter-tools-for-now-months-refund/">read our blog post</a> for details.')
+    $('body').prepend(p)
+    return
+
     // Pass various OAuth bits of data to the Python script that is going to do the work
     scraperwiki.exec('echo ' + scraperwiki.shellEscape(q) + '>user.txt; ONETIME=1 tool/twfollow.py "' + callback_url + '" "' + oauth_verifier + '"', 
         function(content) {
